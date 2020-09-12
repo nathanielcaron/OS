@@ -1,0 +1,14 @@
+# Object files
+*.o
+
+# Executables
+*.exe
+
+# Libraries
+*.lib
+
+# DLLs
+*.dll
+
+# Test Results
+*.result
