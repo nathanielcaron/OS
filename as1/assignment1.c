@@ -23,6 +23,10 @@ typedef struct Table2 {
     int finish_time;
 } Table2;
 
+/**
+ * getProcesses() is the function used to read in the processes from the input
+ * The parameter is where the processes will be stored
+ */
 int getProcesses(struct Process processes[250]) {
     int max_len = 250;
     char line[250] = {0};
@@ -68,16 +72,20 @@ int getProcesses(struct Process processes[250]) {
 int main(int argc, char **argv) {
 
     struct Process processes[250];
+    int process_count = 0;
+    int arrived_prosess_count = 0;
+
+    char current_user[50] = {0};
     
     // Get the processes from the input file
-    int process_count = getProcesses(processes);
+    process_count = getProcesses(processes);
 
-    // Define table 2
-    // struct Table2 table2[process_count];
-
-    // Determine the total processing time
+    // Define second ouput table and determine the total processing time
+    struct Table2 table2[process_count];
+    int user_count = 0;
     int total_time = processes[0].arrival;
     for (int i = 0; i < process_count; i++) {
+        table2[i].finish_time = -1;
         total_time += processes[i].duration;
     }
 
@@ -87,14 +95,80 @@ int main(int argc, char **argv) {
     printf("earliest time: %d\n", earliest_arrival);
     printf("total time: %d\n", total_time);
 
+    // This is where the output is produced
     printf("\nOutput:\n");
-    for (int i = earliest_arrival; i <= total_time; i++) {
-        if (i == total_time) {
-            printf("%d\tIDLE\n", i);
+
+    int process_to_execute_index = 0;
+
+    for (int time = earliest_arrival; time <= total_time; time++) {
+        if (time == total_time) {
+            printf("%d\tIDLE\n", time);
         } else {
-            printf("%d\tA\n", i);
+            printf("%d\t", time);
+
+            // Determine which processes are arrived
+            for (int i = 0; i < process_count; i++) {
+                if (processes[i].arrival == time) {
+                    arrived_prosess_count++;
+                }
+            }
+            printf("Arrived processes: %d\t", arrived_prosess_count);
+
+            // Determine which of the arrived processes should be executed
+            for (int i = 0; i < arrived_prosess_count; i++) {
+                if (processes[process_to_execute_index].duration == 0) {
+                    process_to_execute_index = i;
+                }
+                else if (processes[i].duration != 0 && processes[i].duration < processes[process_to_execute_index].duration) {
+                    process_to_execute_index = i;
+                }
+            }
+
+            // Execute the process
+            if (processes[process_to_execute_index].duration > 0) {
+                printf("%c\t%d\n", processes[process_to_execute_index].process, processes[process_to_execute_index].duration);
+                (processes[process_to_execute_index].duration)--;
+                // Process is done
+                if (processes[process_to_execute_index].duration == 0) {
+                    strcpy(current_user, processes[process_to_execute_index].user);
+                    for (int i = 0; i < user_count; i++) {
+                        // User already in table
+                        if (strcmp(current_user, table2[i].user) == 0){
+                            table2[i].finish_time = time+1;
+                        }
+                    }
+                    // User not in table
+                    strcpy(table2[user_count].user, current_user);
+                    table2[user_count].finish_time = time+1;
+                    user_count++;
+                }
+            }
         }
+    }
+
+    printf("\nSummary\n");
+    // Print second table
+    for (int i = 0; i < user_count; i++) {
+        printf("%s\t%d\n", table2[i].user, table2[i].finish_time);
     }
 
     return EXIT_SUCCESS;
 }
+
+// Have arrived processes array with arrived processes counter
+// Add process to arrived processes array when current time >= arrival time
+// Execute the arrived process with the lowest duration (break duration ties with arrival time)
+// If same duration and same arrival time, then use order from input
+
+// Cases to consider:
+// Sample input / ouput provided
+// two processes with same duration and same arrival time
+// single process in input file
+// No process
+// More complex input file
+
+// For second ouput table, ignore entries with finish_time = -1
+// When process hits zero, look at user and enter it in table2 along with current time
+
+// TODO: Fix duplicate in summary table
+//       Fix order in summary table
