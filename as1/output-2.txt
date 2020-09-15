@@ -1,0 +1,12 @@
+Time	Job
+1	A
+2	A
+3	A
+4	B
+5	B
+6	B
+7	IDLE
+
+Summary
+Jim	4
+Mary	7

@@ -34,8 +34,7 @@ int getProcesses(struct Process processes[250]) {
 
     // Ignore the first line (header)
     if (fgets(line, max_len, stdin) == NULL) {
-        printf("No input provided!\n");
-        return EXIT_FAILURE;
+        return 0;
     }
 
     while (fgets(line, max_len, stdin) != NULL) {
@@ -61,11 +60,6 @@ int getProcesses(struct Process processes[250]) {
         process_count++;
     }
 
-    printf("\nProcesses:\n");
-    for (int i = 0; i < process_count; i++) {
-        printf("%s\t%c\t%d\t%d\n", processes[i].user, processes[i].process, processes[i].arrival, processes[i].duration);
-    }
-
     return process_count;
 }
 
@@ -76,99 +70,97 @@ int main(int argc, char **argv) {
     int arrived_prosess_count = 0;
 
     char current_user[50] = {0};
+    int user_in_table = 0;
     
     // Get the processes from the input file
     process_count = getProcesses(processes);
 
-    // Define second ouput table and determine the total processing time
-    struct Table2 table2[process_count];
-    int user_count = 0;
-    int total_time = processes[0].arrival;
-    for (int i = 0; i < process_count; i++) {
-        table2[i].finish_time = -1;
-        total_time += processes[i].duration;
-    }
+    if (process_count > 0) {
+        // Define second ouput table and determine the total processing time
+        struct Table2 table2[process_count];
+        int user_count = 0;
+        int total_time = processes[0].arrival;
+        for (int i = 0; i < process_count; i++) {
+            table2[i].finish_time = -1;
+            total_time += processes[i].duration;
+        }
 
-    int earliest_arrival = processes[0].arrival;
-
-    printf("\nTimes:\n");
-    printf("earliest time: %d\n", earliest_arrival);
-    printf("total time: %d\n", total_time);
-
-    // This is where the output is produced
-    printf("\nOutput:\n");
-
-    int process_to_execute_index = 0;
-
-    for (int time = earliest_arrival; time <= total_time; time++) {
-        if (time == total_time) {
-            printf("%d\tIDLE\n", time);
-        } else {
-            printf("%d\t", time);
-
-            // Determine which processes are arrived
-            for (int i = 0; i < process_count; i++) {
-                if (processes[i].arrival == time) {
-                    arrived_prosess_count++;
+        for (int i = 0; i < process_count; i++) {
+            strcpy(current_user, processes[i].user);
+            for (int j = 0; j < user_count; j++) {
+                // User already in table
+                if (strcmp(current_user, table2[j].user) == 0){
+                    user_in_table = 1;
                 }
             }
-            printf("Arrived processes: %d\t", arrived_prosess_count);
-
-            // Determine which of the arrived processes should be executed
-            for (int i = 0; i < arrived_prosess_count; i++) {
-                if (processes[process_to_execute_index].duration == 0) {
-                    process_to_execute_index = i;
-                }
-                else if (processes[i].duration != 0 && processes[i].duration < processes[process_to_execute_index].duration) {
-                    process_to_execute_index = i;
-                }
+            if (user_in_table == 0) {
+                // User not in table
+                strcpy(table2[user_count].user, current_user);
+                user_count++;
             }
+            user_in_table = 0;
+        }
 
-            // Execute the process
-            if (processes[process_to_execute_index].duration > 0) {
-                printf("%c\t%d\n", processes[process_to_execute_index].process, processes[process_to_execute_index].duration);
-                (processes[process_to_execute_index].duration)--;
-                // Process is done
-                if (processes[process_to_execute_index].duration == 0) {
-                    strcpy(current_user, processes[process_to_execute_index].user);
-                    for (int i = 0; i < user_count; i++) {
-                        // User already in table
-                        if (strcmp(current_user, table2[i].user) == 0){
-                            table2[i].finish_time = time+1;
+        int earliest_arrival = processes[0].arrival;
+
+        int process_to_execute_index = 0;
+
+        printf("Time\tJob\n");
+
+        for (int time = earliest_arrival; time <= total_time; time++) {
+            if (time == total_time) {
+                printf("%d\tIDLE\n", time);
+            } else {
+                printf("%d\t", time);
+
+                // Determine which processes are arrived
+                for (int i = 0; i < process_count; i++) {
+                    if (processes[i].arrival == time) {
+                        arrived_prosess_count++;
+                    }
+                }
+
+                // Determine which of the arrived processes should be executed
+                for (int i = 0; i < arrived_prosess_count; i++) {
+                    if (processes[process_to_execute_index].duration == 0) {
+                        process_to_execute_index = i;
+                    }
+                    else if (processes[i].duration != 0 && processes[i].duration < processes[process_to_execute_index].duration) {
+                        process_to_execute_index = i;
+                    }
+                }
+
+                // Execute the process
+                if (processes[process_to_execute_index].duration > 0) {
+                    printf("%c\n", processes[process_to_execute_index].process);
+                    (processes[process_to_execute_index].duration)--;
+                    // Check if process is done
+                    if (processes[process_to_execute_index].duration == 0) {
+                        strcpy(current_user, processes[process_to_execute_index].user);
+                        for (int i = 0; i < user_count; i++) {
+                            if (strcmp(current_user, table2[i].user) == 0){
+                                table2[i].finish_time = time+1;
+                            }
                         }
                     }
-                    // User not in table
-                    strcpy(table2[user_count].user, current_user);
-                    table2[user_count].finish_time = time+1;
-                    user_count++;
                 }
             }
         }
-    }
 
-    printf("\nSummary\n");
-    // Print second table
-    for (int i = 0; i < user_count; i++) {
-        printf("%s\t%d\n", table2[i].user, table2[i].finish_time);
+        printf("\nSummary\n");
+        // Print second table
+        for (int i = 0; i < user_count; i++) {
+            printf("%s\t%d\n", table2[i].user, table2[i].finish_time);
+        }
     }
 
     return EXIT_SUCCESS;
 }
 
-// Have arrived processes array with arrived processes counter
-// Add process to arrived processes array when current time >= arrival time
-// Execute the arrived process with the lowest duration (break duration ties with arrival time)
-// If same duration and same arrival time, then use order from input
-
 // Cases to consider:
-// Sample input / ouput provided
-// two processes with same duration and same arrival time
-// single process in input file
-// No process
+// (DONE) Sample input / ouput provided
+// (DONE) two processes with same duration and same arrival time
+// (DONE) single process in input file
+// No process ***
+// No input ***
 // More complex input file
-
-// For second ouput table, ignore entries with finish_time = -1
-// When process hits zero, look at user and enter it in table2 along with current time
-
-// TODO: Fix duplicate in summary table
-//       Fix order in summary table

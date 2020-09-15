@@ -1,0 +1,8 @@
+Time	Job
+4	A
+5	A
+6	A
+7	IDLE
+
+Summary
+Jim	7
