@@ -3,13 +3,13 @@
 #include <string.h>
 
 /**
- * Assignment 1 - Preemptive Shortest Job First
+ * Assignment 1 - Preemptive Shortest Job First (SJF)
  * CS 3413
  * Nathaniel Caron
  * 3598979
  */
 
-// A structure to represent a process
+// Structure to represent a process
 typedef struct Process {
     char user[50];
     char process[50];
@@ -17,62 +17,20 @@ typedef struct Process {
     int duration;
 } Process;
 
-// A structure to represent the summary table
+// Structure to represent the summary table
 typedef struct Summary {
     char user[50];
     int finish_time;
 } Summary;
 
-void initProcesses(Process **processes, size_t size) {
-  *processes = (Process*)calloc(size, sizeof(Process));
-}
-
-void reallocateProcesses(Process **processes, size_t *size) {
-    *size *= 2;
-    *processes = (Process*)realloc(*processes, (*size) * sizeof(Process));
-}
-
-// Function used to read in the processes from the input
-int getProcesses(Process **processes, size_t *processes_size) {
-    int max_len = 500;
-    char line[500] = {0};
-
-    size_t process_count = 0;
-
-    // Ignore the first line (header)
-    if (fgets(line, max_len, stdin) == NULL) {
-        return 0;
-    }
-
-    while (fgets(line, max_len, stdin) != NULL) {
-        int token_num = 0;
-
-        if (process_count == *processes_size) {
-            reallocateProcesses(processes, processes_size);
-        }
-
-        // Tokenize each line
-        char *token;
-        for (token = strtok(line, " \t"); token != NULL; token = strtok(NULL, " \t")) {
-            if (token_num == 0) {
-                strcpy((*processes)[process_count].user, token);
-            } else if (token_num == 1) {
-                strcpy((*processes)[process_count].process, token);
-            } else if (token_num == 2) {
-                (*processes)[process_count].arrival = atoi(token);
-            } else {
-                (*processes)[process_count].duration = atoi(token);
-            }
-            token_num++;
-        }
-        process_count++;
-    }
-
-    return process_count;
-}
+// Function templates
+void initProcesses(Process **processes, size_t size);
+void reallocateProcesses(Process **processes, size_t *size);
+int getProcesses(Process **processes, size_t *processes_size);
 
 int main(int argc, char **argv) {
 
+    // Initialize processes array
     Process *processes;
     size_t processes_size = 500;
     initProcesses(&processes, processes_size);
@@ -80,6 +38,7 @@ int main(int argc, char **argv) {
     int process_count = 0;
     int arrived_process_count = 0;
 
+    // For loop variables
     int i = 0;
     int j = 0;
     int time = 0;
@@ -126,7 +85,7 @@ int main(int argc, char **argv) {
         } else {
             printf("%d\t", time);
 
-            // Determine which processes are arrived
+            // Determine which processes have arrived
             for (i = 0; i < process_count; i++) {
                 if (processes[i].arrival == time) {
                     arrived_process_count++;
@@ -137,8 +96,7 @@ int main(int argc, char **argv) {
             for (i = 0; i < arrived_process_count; i++) {
                 if (processes[process_to_execute_index].duration == 0) {
                     process_to_execute_index = i;
-                }
-                else if (processes[i].duration != 0 && processes[i].duration < processes[process_to_execute_index].duration) {
+                } else if (processes[i].duration != 0 && processes[i].duration < processes[process_to_execute_index].duration) {
                     process_to_execute_index = i;
                 }
             }
@@ -168,4 +126,54 @@ int main(int argc, char **argv) {
     }
 
     return EXIT_SUCCESS;
+}
+
+// Function to initialize the processes array
+void initProcesses(Process **processes, size_t size) {
+  *processes = (Process*)calloc(size, sizeof(Process));
+}
+
+// Function to allocate more space for the processes array
+void reallocateProcesses(Process **processes, size_t *size) {
+    *size *= 2;
+    *processes = (Process*)realloc(*processes, (*size) * sizeof(Process));
+}
+
+// Function used to read in the processes from the input
+int getProcesses(Process **processes, size_t *processes_size) {
+    int max_len = 500;
+    char line[500] = {0};
+
+    size_t process_count = 0;
+
+    // Ignore the first line (header)
+    if (fgets(line, max_len, stdin) == NULL) {
+        return 0;
+    }
+
+    while (fgets(line, max_len, stdin) != NULL) {
+        int token_num = 0;
+
+        if (process_count == *processes_size) {
+            reallocateProcesses(processes, processes_size);
+        }
+
+        // Tokenize each line
+        char *token;
+        for (token = strtok(line, " \t"); token != NULL; token = strtok(NULL, " \t")) {
+            if (token_num == 0) {
+                strcpy((*processes)[process_count].user, token);
+            } else if (token_num == 1) {
+                strcpy((*processes)[process_count].process, token);
+            } else if (token_num == 2) {
+                (*processes)[process_count].arrival = atoi(token);
+            } else {
+                (*processes)[process_count].duration = atoi(token);
+            }
+            token_num++;
+        }
+        process_count++;
+    }
+
+    return process_count;
 }
