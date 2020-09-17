@@ -1,2 +1,2 @@
 User	Process	Arrival	Duration
-Jim	A	4	3
+Jim	A	10	5000
