@@ -1,0 +1,3 @@
+User	Process	Arrival	Duration
+Jim	A1	1	1
+Mary	A	4	1

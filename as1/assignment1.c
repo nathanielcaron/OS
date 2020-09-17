@@ -41,18 +41,11 @@ int main(int argc, char **argv) {
     // For loop variables
     int i = 0;
     int j = 0;
-    int time = 0;
     
     // Get the processes from the input file
     process_count = getProcesses(&processes, &processes_size);
 
-    // Determine the total processing time
-    int total_time = 0;
     int earliest_arrival = processes[0].arrival;
-    total_time += earliest_arrival;
-    for (i = 0; i < process_count; i++) {
-        total_time += processes[i].duration;
-    }
 
     // Define the summary table
     Summary summary_table[process_count];
@@ -76,47 +69,57 @@ int main(int argc, char **argv) {
     }
 
     int process_to_execute_index = 0;
+    int time = earliest_arrival;
 
     printf("Time\tJob\n");
 
-    for (time = earliest_arrival; time <= total_time; time++) {
-        if (time == total_time) {
-            printf("%d\tIDLE\n", time);
-        } else {
-            printf("%d\t", time);
+    int is_done = 0;
+    while (is_done == 0) {
 
-            // Determine which processes have arrived
-            for (i = 0; i < process_count; i++) {
-                if (processes[i].arrival == time) {
-                    arrived_process_count++;
-                }
+        // Check if all processes are complete
+        is_done = 1;
+        for (i = 0; i < process_count; i++) {
+            if (processes[i].duration > 0) {
+                is_done = 0;
+                break;
             }
+        }
 
-            // Determine which of the arrived processes should be executed
-            for (i = 0; i < arrived_process_count; i++) {
-                if (processes[process_to_execute_index].duration == 0) {
-                    process_to_execute_index = i;
-                } else if (processes[i].duration != 0 && processes[i].duration < processes[process_to_execute_index].duration) {
-                    process_to_execute_index = i;
-                }
+        // Determine which processes have arrived
+        for (i = 0; i < process_count; i++) {
+            if (processes[i].arrival == time) {
+                arrived_process_count++;
             }
+        }
 
-            // Execute the process
-            if (processes[process_to_execute_index].duration > 0) {
-                printf("%s\n", processes[process_to_execute_index].process);
-                (processes[process_to_execute_index].duration)--;
+        // Determine which of the arrived processes should be executed
+        for (i = 0; i < arrived_process_count; i++) {
+            if (processes[process_to_execute_index].duration == 0) {
+                process_to_execute_index = i;
+            } else if (processes[i].duration != 0 && processes[i].duration < processes[process_to_execute_index].duration) {
+                process_to_execute_index = i;
+            }
+        }
 
-                // Check if process is done, if it is, enter in summary table
-                if (processes[process_to_execute_index].duration == 0) {
-                    strcpy(current_user, processes[process_to_execute_index].user);
-                    for (i = 0; i < user_count; i++) {
-                        if (strcmp(current_user, summary_table[i].user) == 0) {
-                            summary_table[i].finish_time = time+1;
-                        }
+        // Execute the process
+        if (processes[process_to_execute_index].duration > 0) {
+            printf("%d\t%s\n", time, processes[process_to_execute_index].process);
+            (processes[process_to_execute_index].duration)--;
+
+            // Check if process is done, if it is, enter in summary table
+            if (processes[process_to_execute_index].duration == 0) {
+                strcpy(current_user, processes[process_to_execute_index].user);
+                for (i = 0; i < user_count; i++) {
+                    if (strcmp(current_user, summary_table[i].user) == 0) {
+                        summary_table[i].finish_time = time+1;
                     }
                 }
             }
+        } else {
+            printf("%d\tIDLE\n", time);
         }
+
+        time++;
     }
 
     // Print summary table
