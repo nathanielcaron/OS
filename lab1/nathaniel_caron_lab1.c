@@ -2,6 +2,13 @@
 #include <stdio.h>
 #include <pthread.h>
 
+/**
+ * Lab 1 - Processes
+ * CS 3413
+ * Nathaniel Caron
+ * 3598979
+ */
+
 static double global_value = 1.0;
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -9,7 +16,7 @@ void* multiply(void *arg) {
     int i = 0;
     for (i = 0; i < 100; i++) {
         pthread_mutex_lock(&mutex);
-        global_value *= 2;
+        global_value = global_value * 2;
         pthread_mutex_unlock(&mutex);
     }
     return NULL;
@@ -19,7 +26,7 @@ void* divide(void *arg) {
     int i = 0;
     for (i = 0; i < 100; i++) {
         pthread_mutex_lock(&mutex);
-        global_value /= 2;
+        global_value = global_value / 2;
         pthread_mutex_unlock(&mutex);
     }
     return NULL;
