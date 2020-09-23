@@ -26,7 +26,6 @@ typedef struct Summary {
 } Summary;
 
 // Function templates
-// int isProcessExecuting(int processor_num, char (*processors)[100], char *process);
 void initProcesses(Process **processes, size_t size);
 void reallocateProcesses(Process **processes, size_t *size);
 int getProcesses(Process **processes, size_t *processes_size);
@@ -37,10 +36,11 @@ int main(int argc, char **argv) {
     int i = 0;
     int j = 0;
 
-    // Read in n command line argument
     /*
      *  TODO: Add more error handling for cmd line argument
      */
+
+    // Read in n command line argument
     int processor_count = 1;
     if (argc > 1) {
         processor_count = atoi(argv[1]);
@@ -48,13 +48,6 @@ int main(int argc, char **argv) {
     if (processor_count < 1) {
         processor_count = 1;
     }
-    // Remove this
-    // printf("processor_count: %d\n", processor_count);
-    // Define array of processors
-    // char processors[processor_num][100];
-    // for (i = 0; i < processor_num; i++) {
-    //     strcpy(processors[i], "");
-    // }
 
     // Initialize processes array
     Process *processes;
@@ -103,10 +96,7 @@ int main(int argc, char **argv) {
     int is_done = 0;
     while (is_done == 0) {
 
-        // Reset processors array
-        // for (i = 0; i < processor_num; i++) {
-        //     strcpy(processors[i], "");
-        // }
+        // Reset running status for all processes
         for (i = 0; i < process_count; i++) {
             processes[i].running = 0;
         }
@@ -130,7 +120,8 @@ int main(int argc, char **argv) {
         printf("%d", time);
 
         for (i = 0; i < processor_count; i++) {
-            // Determine which of the arrived processes should be executed
+            process_to_execute_index = 0;
+            // Determine which of the arrived processes should be executed for each CPU
             for (j = 0; j < arrived_process_count; j++) {
                 if (processes[process_to_execute_index].duration == 0 || processes[process_to_execute_index].running == 1) {
                     process_to_execute_index = j;
@@ -176,16 +167,6 @@ int main(int argc, char **argv) {
 
     return EXIT_SUCCESS;
 }
-
-// int isProcessExecuting(int processor_num, char (*processors)[100], char *process) {
-//     int i = 0;
-//     for (i = 0; i < processor_num; i++) {
-//         if (strcmp(processors[i], process) == 0) {
-//             return 0;
-//         }
-//     }
-//     return 1;
-// }
 
 // Function to initialize the processes array
 void initProcesses(Process **processes, size_t size) {
