@@ -7,12 +7,17 @@
  * CS 3413
  * Nathaniel Caron
  * 3598979
+ * 
+ * Tested With (Single core, Dual core, Triple core, Quad core etc.):
+ * - Two processes with same arrival, duration, deadline (first come first served)
+ * - Two processes with same arrival, duration (earliest deadline first)
+ * - Two processes with same arrival (earliest deadline first, if tie shortest job first)
  */
 
-// Structure to represent a process
+// Structure to represent a process (All VARIABLE SIZE strings)
 typedef struct Process {
-    char user[100];
-    char process[100];
+    char *user;
+    char *process;
     int arrival;
     int duration;
     int deadline;
@@ -21,7 +26,7 @@ typedef struct Process {
 
 // Structure to represent the summary table
 typedef struct Summary {
-    char user[100];
+    char *user;
     int finish_time;
 } Summary;
 
@@ -36,7 +41,7 @@ int main(int argc, char **argv) {
     int i = 0;
     int j = 0;
 
-    // Read in n command line argument (Default to single core)
+    // Read in number of processors as command line argument (Default to single core)
     int processor_count = 1;
     if (argc > 1) {
         processor_count = atoi(argv[1]);
@@ -45,35 +50,33 @@ int main(int argc, char **argv) {
         }
     }
 
-    // Initialize processes array
+    // Initialize processes (VARIABLE SIZE, see reallocateProcesses() function)
     Process *processes;
-    size_t processes_size = 500;
-    initProcesses(&processes, processes_size);
+    size_t initial_size = 500;
+    initProcesses(&processes, initial_size);
 
     int process_count = 0;
     int arrived_process_count = 0;
     
     // Get the processes from the input file
-    process_count = getProcesses(&processes, &processes_size);
+    process_count = getProcesses(&processes, &initial_size);
 
     int earliest_arrival = processes[0].arrival;
 
     // Define the summary table
     Summary summary_table[process_count];
     int user_count = 0;
-    char current_user[100] = {0};
     int user_in_table = 0;
     for (i = 0; i < process_count; i++) {
-        strcpy(current_user, processes[i].user);
         for (j = 0; j < user_count; j++) {
             // User already in table
-            if (strcmp(current_user, summary_table[j].user) == 0){
+            if (strcmp(processes[i].user, summary_table[j].user) == 0){
                 user_in_table = 1;
             }
         }
         if (user_in_table == 0) {
             // User not in table
-            strcpy(summary_table[user_count].user, current_user);
+            summary_table[user_count].user = strdup(processes[i].user);
             user_count++;
         }
         user_in_table = 0;
@@ -115,14 +118,16 @@ int main(int argc, char **argv) {
 
         printf("%d", time);
 
+        // Determine which of the arrived processes should be executed by each CPU
         for (i = 0; i < processor_count; i++) {
             process_to_execute_index = 0;
-            // Determine which of the arrived processes should be executed for each CPU
             for (j = 0; j < arrived_process_count; j++) {
                 if (processes[process_to_execute_index].duration == 0 || processes[process_to_execute_index].running == 1) {
                     process_to_execute_index = j;
+                // Always execute EARLIEST DEADLINE First
                 } else if (processes[j].duration != 0 && processes[j].running != 1 && processes[j].deadline < processes[process_to_execute_index].deadline) {
                     process_to_execute_index = j;
+                // Always execute SHORTEST JOB First if deadlines are the same
                 } else if (processes[j].duration != 0 && processes[j].running != 1 && processes[j].deadline == processes[process_to_execute_index].deadline && processes[j].duration < processes[process_to_execute_index].duration) {
                     process_to_execute_index = j;
                 }
@@ -136,9 +141,8 @@ int main(int argc, char **argv) {
 
                 // Check if process is done, if it is, enter in summary table
                 if (processes[process_to_execute_index].duration == 0) {
-                    strcpy(current_user, processes[process_to_execute_index].user);
                     for (j = 0; j < user_count; j++) {
-                        if (strcmp(current_user, summary_table[j].user) == 0) {
+                        if (strcmp(processes[process_to_execute_index].user, summary_table[j].user) == 0) {
                             summary_table[j].finish_time = time+1;
                         }
                     }
@@ -164,12 +168,12 @@ int main(int argc, char **argv) {
     return EXIT_SUCCESS;
 }
 
-// Function to initialize the processes array
+// Function to initialize the processes array (initial size expanded as needed)
 void initProcesses(Process **processes, size_t size) {
   *processes = (Process*)calloc(size, sizeof(Process));
 }
 
-// Function to allocate more space for the processes array
+// Function to reallocate space for the processes (VARIABLE SIZE)
 void reallocateProcesses(Process **processes, size_t *size) {
     *size *= 2;
     *processes = (Process*)realloc(*processes, (*size) * sizeof(Process));
@@ -177,19 +181,18 @@ void reallocateProcesses(Process **processes, size_t *size) {
 
 // Function used to read in the processes from the input
 int getProcesses(Process **processes, size_t *processes_size) {
-    int max_len = 500;
-    char line[500] = {0};
+    int line_len = 1000;
+    char line[1000] = {0};
 
     size_t process_count = 0;
 
-    // Ignore the first line (header)
-    if (fgets(line, max_len, stdin) == NULL) {
-        return 0;
-    }
+    // Ignore input header
+    fgets(line, line_len, stdin);
 
-    while (fgets(line, max_len, stdin) != NULL) {
+    while (fgets(line, line_len, stdin) != NULL) {
         int token_num = 0;
 
+        // Reallocate more space for processes if needed (VARIABLE SIZE)
         if (process_count == *processes_size) {
             reallocateProcesses(processes, processes_size);
         }
@@ -198,9 +201,9 @@ int getProcesses(Process **processes, size_t *processes_size) {
         char *token;
         for (token = strtok(line, " \t"); token != NULL; token = strtok(NULL, " \t")) {
             if (token_num == 0) {
-                strcpy((*processes)[process_count].user, token);
+                (*processes)[process_count].user = strdup(token);
             } else if (token_num == 1) {
-                strcpy((*processes)[process_count].process, token);
+                (*processes)[process_count].process = strdup(token);
             } else if (token_num == 2) {
                 (*processes)[process_count].arrival = atoi(token);
             } else if (token_num == 3) {

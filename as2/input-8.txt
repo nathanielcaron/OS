@@ -1,0 +1,14 @@
+User	Process	Arrival	Duration	Deadline
+Jim ZZZ 5   1   20
+Jim ZZ 5   1   20
+Jim Z 5   1   20
+Jim ZZ 5   1   20
+Jim ZZZ 5   1   20
+Jim ZZ 5   1   20
+Jim P1 5   1   19
+Jim ZZ 5   1   20
+Jim ZZZ 5   1   20
+Jim ZZ 5   1   20
+Jim Z 5   1   20
+Jim ZZ 5   1   20
+Jim ZZZ 5   1   20
