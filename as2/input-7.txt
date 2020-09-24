@@ -1,0 +1,3 @@
+User	Process	Arrival	Duration	Deadline
+Jim AAA 5   1   500
+John    BBB 10  1   20

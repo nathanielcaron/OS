@@ -36,17 +36,13 @@ int main(int argc, char **argv) {
     int i = 0;
     int j = 0;
 
-    /*
-     *  TODO: Add more error handling for cmd line argument
-     */
-
-    // Read in n command line argument
+    // Read in n command line argument (Default to single core)
     int processor_count = 1;
     if (argc > 1) {
         processor_count = atoi(argv[1]);
-    }
-    if (processor_count < 1) {
-        processor_count = 1;
+        if (processor_count < 1) {
+            processor_count = 1;
+        }
     }
 
     // Initialize processes array
@@ -65,7 +61,7 @@ int main(int argc, char **argv) {
     // Define the summary table
     Summary summary_table[process_count];
     int user_count = 0;
-    char current_user[50] = {0};
+    char current_user[100] = {0};
     int user_in_table = 0;
     for (i = 0; i < process_count; i++) {
         strcpy(current_user, processes[i].user);

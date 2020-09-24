@@ -1,0 +1,2 @@
+User	Process	Arrival	Duration	Deadline
+Jim	A	10	10	20
