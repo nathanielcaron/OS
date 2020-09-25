@@ -31,7 +31,7 @@ typedef struct Summary {
 } Summary;
 
 // Function templates
-void initProcesses(Process **processes, size_t size);
+void initProcesses(Process **processes, size_t *size);
 void reallocateProcesses(Process **processes, size_t *size);
 int getProcesses(Process **processes, size_t *processes_size);
 
@@ -50,10 +50,10 @@ int main(int argc, char **argv) {
         }
     }
 
-    // Initialize processes (VARIABLE SIZE, see reallocateProcesses() function)
+    // Initialize processes, VARIABLE SIZE, see reallocateProcesses() function
     Process *processes;
-    size_t initial_size = 500;
-    initProcesses(&processes, initial_size);
+    size_t initial_size;
+    initProcesses(&processes, &initial_size);
 
     int process_count = 0;
     int arrived_process_count = 0;
@@ -120,6 +120,7 @@ int main(int argc, char **argv) {
 
         // Determine which of the arrived processes should be executed by each CPU
         for (i = 0; i < processor_count; i++) {
+            // Reset process_to_execute_index index
             process_to_execute_index = 0;
             for (j = 0; j < arrived_process_count; j++) {
                 if (processes[process_to_execute_index].duration == 0 || processes[process_to_execute_index].running == 1) {
@@ -169,8 +170,9 @@ int main(int argc, char **argv) {
 }
 
 // Function to initialize the processes array (initial size expanded as needed)
-void initProcesses(Process **processes, size_t size) {
-  *processes = (Process*)calloc(size, sizeof(Process));
+void initProcesses(Process **processes, size_t *size) {
+    *size = 500;
+    *processes = (Process*)calloc(*size, sizeof(Process));
 }
 
 // Function to reallocate space for the processes (VARIABLE SIZE)

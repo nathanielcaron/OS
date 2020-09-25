@@ -1,4 +1,9 @@
 User	Process	Arrival	Duration	Deadline
-Jim	A	2	5	25
-Mary	B	2	5	25
-Sue	C	5	1	8
+John    AAAA 6   5   24
+Jim	BBBB	6	4	25
+Mary	CCCC	6	5	25
+Marvin    DDDD    6	5	25
+John    EEEE 7   5   100
+Jim	FFFF	7	5	100
+Mary	GGGG	7	4	100
+Marvin    HHHH    7	5	99
