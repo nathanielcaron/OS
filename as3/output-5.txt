@@ -1,0 +1,20 @@
+Time	CPU1	CPU2
+1	AAA	BBB
+2	AAA	BBB
+3	AAA	BBB
+4	AAA	BBB
+5	AAA	CCC
+6	CCC	DDD
+7	CCC	DDD
+8	CCC	DDD
+9	CCC	DDD
+10	DDD	-
+11	IDLE
+
+Summary
+Jim	10
+Mary	11
+Aaron	6
+Mark	5
+
+0 missed deadlines

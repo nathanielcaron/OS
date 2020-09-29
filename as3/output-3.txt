@@ -1,0 +1,6 @@
+Time	CPU1	CPU2
+0	IDLE
+
+Summary
+
+0 missed deadlines

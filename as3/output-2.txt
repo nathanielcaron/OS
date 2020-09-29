@@ -1,0 +1,12 @@
+Time	CPU1	CPU2
+2	B	A
+3	B	A
+4	B	A
+5	B	A
+6	IDLE
+
+Summary
+Jim	6
+Mary	6
+
+1 missed deadlines

@@ -11,7 +11,7 @@
  * 3598979
  */
 
-// Structure to represent a process (All VARIABLE SIZE strings)
+// Structure to represent a process
 typedef struct Process {
     char *user;
     char *process;
@@ -45,68 +45,124 @@ void insertNode(Node **head, Node *node);
 
 
 int process_count = 0;
+int earliest_arrival = 0;
 int processor_count = 1;
 int missed_deadlines = 0;
 int assigned_processes = 0;
 int processed_processes = 0;
 Node *head = NULL;
+Summary *summary_table;
+int user_count = 0;
 pthread_mutex_t mutex_assign = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_process = PTHREAD_MUTEX_INITIALIZER;
 
 void* execute(void* processes_ptr) {
     int i = 0;
-    int time = 0;
+    int time = earliest_arrival;
     Process *processes = (Process *)processes_ptr;
 
-    // Test for timing
-    for (time = 2; time < 5; time++) {
+    int is_done = 0;
+
+    while (is_done != 1) {
+
+        // Check if all processes are complete
+        is_done = 1;
+        for (i = 0; i < process_count; i++) {
+            if (processes[i].duration > 0) {
+                is_done = 0;
+                break;
+            }
+        }
+
         // Assign process
         pthread_mutex_lock(&mutex_assign);
+            while (processed_processes != 0) {}
             if (assigned_processes == 0) {
+                if (time == earliest_arrival) {
+                    // Print output header
+                    printf("Time");
+                    for (i = 0; i < processor_count; i++) {
+                        printf("\tCPU%d", i+1);
+                    }
+                    printf("\n");
+                }
                 // This is the first thread to assign a process
-                printf("First thread to assign a process\n");
+                // printf("First thread to assign a process\n");
 
                 // Determine which processes have arrived
                 for (i = 0; i < process_count; i++) {
                     if (processes[i].arrival == time) {
-                        printf("Inserting node into run queue\n");
+                        // printf("Inserting node into run queue\n");
                         Node *node = newNode(i, &processes[i]);
                         insertNode(&head, node);
                     }
                 }
+
+                // printf("\nRun Queue\n");
+                // printf("--- --- --- ---\n");
+                // if (head != NULL) {
+                //     Node *current = head;
+                //     while (current != NULL) {
+                //         printf("%s %d -> ", current->process->process, current->process->duration);
+                //         current = current->next;
+                //     }
+                // }
+                // printf("\n--- --- --- ---\n");
             }
-            printf("\nRun Queue\n");
-            printf("--- --- --- ---\n");
+
+            Node *current_process = NULL;
+
+            if (assigned_processes == 0) {
+                printf("%d", time);
+            }
+
             if (head != NULL) {
-                Node *current = head;
-                printf("Current node assigned\n");
-                while (current != NULL) {
-                    printf("%s -> ", current->process->process);
-                    current = current->next;
+                current_process = newNode(head->process_position, head->process);
+                removeNode(&head);
+                printf("\t%s", current_process->process->process);
+                // printf("Current Head: %s\n", head->process->process);
+            } else {
+                if (is_done == 1 && assigned_processes == 0) {
+                    printf("\tIDLE");
+                } else if (is_done == 0) {
+                    printf("\t-");
                 }
             }
-            printf("--- --- --- ---\n");
 
-
-            Node *process = head;
-            removeNode(&head);
-            if (head != NULL) {
-                printf("Current Head: %s\n", head->process->process);
-            }
-
-            printf("Thread %d time %d\n", assigned_processes+1, time);
+            // printf("Thread %d time %d\n", assigned_processes+1, time);
             assigned_processes++;
+
+            if (assigned_processes == processor_count) {
+                printf("\n");
+            }
         pthread_mutex_unlock(&mutex_assign);
 
         // Execute process
-        // pthread_mutex_lock(&mutex_process);
-        //     if (assigned_processes == processor_count) {
-        //         assigned_processes = 0;
-        //         (process->process->duration)--;
-        //         insertNode(&head, process);
-        //     }
-        // pthread_mutex_unlock(&mutex_process);
+        pthread_mutex_lock(&mutex_process);
+            while (assigned_processes != processor_count) {}
+            if (current_process != NULL) {
+                (current_process->process->duration)--;
+                if (current_process->process->duration == 0) {
+                    if (time+1 > current_process->process->deadline) {
+                        missed_deadlines++;
+                    }
+                    for (i = 0; i < user_count; i++) {
+                        if (strcmp(current_process->process->user, summary_table[i].user) == 0) {
+                            summary_table[i].finish_time = time+1;
+                        }
+                    }
+                } else {
+                    insertNode(&head, current_process);
+                }
+            }
+            processed_processes++;
+            if (processed_processes == processor_count) {
+                assigned_processes = 0;
+                processed_processes = 0;
+            }
+        pthread_mutex_unlock(&mutex_process);
 
+        time++;
         sleep(1);
     }
 
@@ -117,6 +173,7 @@ int main(int argc, char **argv) {
 
     // For loop variables
     int i = 0;
+    int j = 0;
 
     // Read in number of processors as command line argument (Default to single core)
     if (argc > 1) {
@@ -139,6 +196,26 @@ int main(int argc, char **argv) {
     initProcesses(&processes, &initial_size);
     process_count = getProcesses(&processes, &initial_size);
 
+    earliest_arrival = processes[0].arrival;
+
+    // Define the summary table
+    summary_table = (Summary *)calloc(process_count, sizeof(*summary_table));
+    int user_in_table = 0;
+    for (i = 0; i < process_count; i++) {
+        for (j = 0; j < user_count; j++) {
+            // User already in table
+            if (strcmp(processes[i].user, summary_table[j].user) == 0){
+                user_in_table = 1;
+            }
+        }
+        if (user_in_table == 0) {
+            // User not in table
+            summary_table[user_count].user = strdup(processes[i].user);
+            user_count++;
+        }
+        user_in_table = 0;
+    }
+
     // Create and join all threads
     pthread_t threads[processor_count];
     for (i = 0; i < processor_count; i++) {
@@ -146,6 +223,63 @@ int main(int argc, char **argv) {
     }
     for (i = 0; i < processor_count; i++) {
         pthread_join(threads[i], NULL);
+    }
+
+    // for (i = 0; i < process_count; i++) {
+    //     Node *node = newNode(i, &processes[i]);
+    //     insertNode(&head, node);
+    // }
+
+    // if (head != NULL) {
+    //     Node *current = head;
+    //     printf("Current node assigned\n");
+    //     while (current != NULL) {
+    //         printf("%s %d -> ", current->process->process, current->process->duration);
+    //         current = current->next;
+    //     }
+    //     printf("\n");
+    // }
+
+    // removeNode(&head);
+
+    // if (head != NULL) {
+    //     Node *current = head;
+    //     printf("Current node assigned\n");
+    //     while (current != NULL) {
+    //         printf("%s %d -> ", current->process->process, current->process->duration);
+    //         current = current->next;
+    //     }
+    //     printf("\n");
+    // }
+
+    // Node *current = newNode(head->process_position, head->process);
+    // removeNode(&head);
+
+    // if (head != NULL) {
+    //     Node *current = head;
+    //     printf("Current node assigned\n");
+    //     while (current != NULL) {
+    //         printf("%s %d -> ", current->process->process, current->process->duration);
+    //         current = current->next;
+    //     }
+    //     printf("\n");
+    // }
+
+    // insertNode(&head, current);
+
+    // if (head != NULL) {
+    //     Node *current = head;
+    //     printf("\n");
+    //     while (current != NULL) {
+    //         printf("%s %d -> ", current->process->process, current->process->duration);
+    //         current = current->next;
+    //     }
+    //     printf("\n");
+    // }
+
+    printf("\nSummary\n");
+    for (i = 0; i < user_count; i++) {
+        printf("%s\t%d\n", summary_table[i].user, summary_table[i].finish_time);
     }
 
     printf("\n%d missed deadlines\n", missed_deadlines);
@@ -206,19 +340,19 @@ int getProcesses(Process **processes, size_t *processes_size) {
     }
 
     // REMOVE THIS
-    printf("\nProcesses\n");
-    printf("--- --- --- ---\n");
-    printf("User\tProcess\tArrival\tDuration\tDeadline\n");
-    for (int i = 0; i < process_count; i++) {
-        printf("%s\t%s\t%d\t%d\t%d\n", (*processes)[i].user, (*processes)[i].process, (*processes)[i].arrival, (*processes)[i].duration, (*processes)[i].deadline);
-    }
-    printf("--- --- --- ---\n");
+    // printf("\nProcesses\n");
+    // printf("--- --- --- ---\n");
+    // printf("User\tProcess\tArrival\tDuration\tDeadline\n");
+    // for (int i = 0; i < process_count; i++) {
+    //     printf("%s\t%s\t%d\t%d\t%d\n", (*processes)[i].user, (*processes)[i].process, (*processes)[i].arrival, (*processes)[i].duration, (*processes)[i].deadline);
+    // }
+    // printf("--- --- --- ---\n");
 
     return process_count;
 }
 
 Node* newNode(int process_position, Process *process) {
-    printf("Creating the node\n");
+    // printf("Creating the node\n");
 	Node* node = (Node*)calloc(1, sizeof(Node));
 	node->process_position = process_position;
     node->process = process;
@@ -228,7 +362,7 @@ Node* newNode(int process_position, Process *process) {
 
 void removeNode(Node **head) {
     if ((*head) != NULL) {
-        printf("Removing node %s\n", (*head)->process->process);
+        // printf("Removing node %s\n", (*head)->process->process);
         Node *temp = (*head);
         (*head) = (*head)->next;
         free(temp);
@@ -247,7 +381,7 @@ int compareNodePriority(Node *node1, Node *node2) {
 }
 
 void insertNode(Node **head, Node *node) {
-    printf("Inserting the node\n");
+    // printf("Inserting the node\n");
     if ((*head) == NULL) {
         // Empty queue
         (*head) = node;
