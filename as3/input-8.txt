@@ -1,0 +1,3 @@
+User	Process	Arrival	Duration	Deadline
+Aaron   AAA 1   0   10
+Mark    BBB 5   0   10
