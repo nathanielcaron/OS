@@ -1,0 +1,5 @@
+User	Process	Arrival	Duration	Deadline
+Mark    CCC 5   2   1
+Aaron   BBB 4   2   1
+Sue DDD 6   2   1
+Jim AAA 3   2   1
