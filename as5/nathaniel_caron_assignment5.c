@@ -19,14 +19,24 @@ typedef struct Car {
     char *direction;
     int arrival;
     int duration;
+    int done;
+    int exited;
 } Car;
+
+Car *cars;
 
 sem_t car_waiting_sem;
 sem_t car_arrived_sem;
+
+sem_t *car_sem;
+
 sem_t time_sem;
 sem_t bridge_sem;
 
+int thread_num = 0;
+
 int car_count = 0;
+int initial_car_count = 0;
 
 int cars_done = 0;
 
@@ -53,14 +63,19 @@ int main(int argc, char **argv) {
     int s_num = 0;
 
     // Initialize cars, VARIABLE SIZE
-    Car *cars;
     size_t initial_size;
     initProcesses(&cars, &initial_size);
 
     // Get the cars from the input file
     car_count = getProcesses(&cars, &initial_size);
 
+    initial_car_count = car_count;
     cars_waiting = car_count;
+
+    for (i = 0; i < car_count; i++) {
+        cars[i].done = 0;
+        cars[i].exited = 0;
+    }
 
     // Determine the earliest arrival time
     earliest_arrival = cars[0].arrival;
@@ -79,13 +94,19 @@ int main(int argc, char **argv) {
 
     current_time = earliest_arrival;
 
+    car_sem = (sem_t *)calloc(car_count, sizeof(car_sem));
+
+    for (i = 0; i < car_count; i++) {
+        sem_init(&car_sem[i], 0, 0);
+    }
+
     // TODO: REMOVE THIS
     printf("Earliest arrival: %d\n", earliest_arrival);
     printf("Current direction: %s\n", current_direction);
     printf("Number of north cars: %d\n", n_num);
     printf("Number of south cars: %d\n\n", s_num);
     for (i = 0; i < car_count; i++) {
-        printf("%s\t%s\t%d\t%d\n", cars[i].car, cars[i].direction, cars[i].arrival, cars[i].duration);
+        printf("%s\t%s\t%d\t%d\t%d\t%d\n", cars[i].car, cars[i].direction, cars[i].arrival, cars[i].duration, cars[i].done, cars[i].exited);
     }
     printf("\n");
 
@@ -111,13 +132,13 @@ int main(int argc, char **argv) {
 
     int is_done = 0;
     while (is_done == 0) {
-        printf("Time: %d, Cars arrived: %d\n", current_time, cars_arrived);
+        // printf("Time: %d, Cars arrived: %d\n", current_time, cars_arrived);
 
         // Remove this
-        if (current_time == 4) {
+        if (current_time == 25) {
             printf("\n --- Done -- \n");
-            for (i = 0; i < car_count; i++) {
-                printf("%s\t%s\t%d\t%d\n", cars[i].car, cars[i].direction, cars[i].arrival, cars[i].duration);
+            for (i = 0; i < initial_car_count; i++) {
+                printf("%s\t%s\t%d\t%d\t%d\t%d\n", cars[i].car, cars[i].direction, cars[i].arrival, cars[i].duration, cars[i].done, cars[i].exited);
             }
             printf(" --- Done ---\n");
             return 0;
@@ -134,17 +155,20 @@ int main(int argc, char **argv) {
 
         sem_wait(&time_sem);
         current_time++;
-    
-        for (i = 0; i < cars_waiting; i++) {
-            sem_post(&car_waiting_sem);
-        }
 
-        for (i = 0; i < cars_arrived; i++) {
-            sem_post(&car_arrived_sem);
+        // Reset all car threads
+        for (i = 0; i < car_count; i++) {
+            if (cars[i].exited != 1) {
+                cars[i].done = 0;
+            }
+        }
+    
+        for (i = 0; i < initial_car_count; i++) {
+            sem_post(&car_sem[i]);
         }
     }
 
-    for (i = 0; i < car_count; i++) {
+    for (i = 0; i < initial_car_count; i++) {
         pthread_join(threads[i], NULL);
     }
 
@@ -156,26 +180,39 @@ int main(int argc, char **argv) {
 }
 
 void *car_thread_execute(void *car_ptr) {
+    int i;
+    int num;
+    sem_t *thread_sem;
+    sem_wait(&bridge_sem);
+        num = thread_num;
+        thread_sem = &car_sem[num];
+        thread_num++;
+    sem_post(&bridge_sem);
     int done = 0;
     Car *car = (Car *)car_ptr;
-    // TODO Remove this
-    printf("thread for car %s\n", car->car);
 
     while (done == 0) {
-        while (current_time < car->arrival || (strcmp(current_direction, car->direction) != 0 && strcmp(current_direction, "NONE") != 0)) {
+        while ((current_time < car->arrival) || (strcmp(current_direction, car->direction) != 0 && strcmp(current_direction, "NONE") != 0)) {
             sem_wait(&bridge_sem);
-                cars_done++;
-                printf("Thread %s done\n", car->car);
-                if (cars_done == car_count) {
-                    printf("\n --- All car threads are done ---\n");
+                car->done = 1;
+                // printf("Thread %s done\n", car->car);
+                int alldone = 1;
+                for (i = 0; i < car_count; i++) {
+                    if (cars[i].done != 1) {
+                        alldone = 0;
+                    }
+                }
+                if (alldone == 1) {
+                    // printf(" --- All car threads are done ---\n");
                     sem_post(&time_sem);
                     cars_done = 0;
                 }
             sem_post(&bridge_sem);
             // Wait
-            sem_wait(&car_waiting_sem);
+            sem_wait(thread_sem);
         }
 
+        // Car has arrived
         sem_wait(&bridge_sem);
             if (current_time == car->arrival) {
                 cars_waiting--;
@@ -197,29 +234,50 @@ void *car_thread_execute(void *car_ptr) {
 
         car->duration--;
 
+        // Thread is done
         sem_wait(&bridge_sem);
-            cars_done++;
-            printf("Thread %s done\n", car->car);
-            if (cars_done == car_count) {
-                printf("\n --- All car threads are done ---\n");
+            car->done = 1;
+            // printf("Thread %s done\n", car->car);
+            int alldone = 1;
+            for (i = 0; i < car_count; i++) {
+                if (cars[i].done != 1) {
+                    alldone = 0;
+                }
+            }
+            if (alldone == 1) {
+                // printf(" --- All car threads are done ---\n");
                 sem_post(&time_sem);
                 cars_done = 0;
             }
         sem_post(&bridge_sem);
 
-        sem_wait(&car_arrived_sem);
+        // Wait
+        sem_wait(thread_sem);
 
+        // Thread completed
         sem_wait(&bridge_sem);
             if (car->duration <= 0) {
                 printf("%s\n", car->car);
                 cars_arrived--;
-                car_count--;
-                printf("Cars arrived: %d\n", cars_arrived);
-                printf("Car count: %d\n", car_count);
+                car->exited = 1;
+                car->done = 1;
+                
+                int alldone = 1;
+                for (i = 0; i < car_count; i++) {
+                    if (cars[i].done != 1) {
+                        alldone = 0;
+                    }
+                }
+                if (alldone == 1) {
+                    // printf(" --- All car threads are done ---\n");
+                    sem_post(&time_sem);
+                }
+
+                // printf("Cars arrived: %d\n", cars_arrived);
                 if (cars_arrived == 0) {
                     strcpy(current_direction, "NONE");
+                    // printf("Current direction: %s\n", current_direction);
                 }
-                printf("Current direction: %s\n", current_direction);
                 done = 1;
             }
         sem_post(&bridge_sem);
