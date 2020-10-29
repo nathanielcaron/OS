@@ -10,6 +10,9 @@
  * 
  * Solution:
  * Uses a linked list to represent memory blocks
+ * IMPORTANT:
+ * Final Smallest Fragmented Memory Size and Final Largest Fragmented Memory Size --> Considers all memory blocks (Free or not)
+ * Total Processes Created, Total Allocated Memory, Total Processes Terminated, Total Freed Memory --> For entire program lifecycle
  */
 
 // Structure for Memory Block Node
@@ -49,16 +52,16 @@ int main(int argc, char **argv) {
     char *line = NULL;
     size_t size = 0;
 
-    // Read in total memory and algorithm from cmd line arguments
+    // Read in Total Memory and Memory Allocation Algorithm from cmd line arguments
     if (argc > 1) {
         for (i = 0; i < argc; i++) {
             if (strcmp(argv[i], "-s") == 0) {
                 total_memory = atoi(argv[i+1]);
-            } else if (strcmp(argv[i], "-f") == 0) {
+            } else if (strcmp(argv[i], "-f") == 0 || strcmp(argv[i], "-F") == 0) {
                 algorithm = 'f';
-            } else if (strcmp(argv[i], "-b") == 0) {
+            } else if (strcmp(argv[i], "-b") == 0 || strcmp(argv[i], "-B") == 0) {
                 algorithm = 'b';
-            } else if (strcmp(argv[i], "-w") == 0) {
+            } else if (strcmp(argv[i], "-w") == 0 || strcmp(argv[i], "-W") == 0) {
                 algorithm = 'w';
             }
         }
@@ -67,76 +70,54 @@ int main(int argc, char **argv) {
         }
     }
 
-    // REMOVE THIS
-    // printf("total memory: %d\n", total_memory);
-    // printf("Algorithm: %c\n", algorithm);
-
     Node *head = createNode(-1, 1, total_memory, total_memory);
-    // printf("--- --- ---\n");
-    // printf("Node %d, start %d, end %d, block size %d\n", head->process, head->start, head->end, head->block_size);
-    // printf("--- --- ---\n");
-
     Node *current = head;
 
     // Listen for user operations
     while (1) {
         getline(&line, &size, stdin);
 
-        // Allocate memory
-        if (line[0] == 'N') {
-            line++;
-            char *token;
-            // Get process number
-            token = strtok(line, " \t");
-            int process = atoi(token);
-            // Get process size
-            token = token = strtok(NULL, " \t");
-            int size = atoi(token);
-            if (algorithm == 'f') {
-                result = first_fit(head, process, size);
-            } else if (algorithm == 'b') {
-                result = best_fit(head, process, size);
-            } else if (algorithm == 'w') {
-                result = worst_fit(head, process, size);
-            }
-            // Could not allocate memory
-            if (result == 0) {
-                printf("Process %d failed to allocate %d memory\n", process, size);
+        if (strlen(line) > 2) {
+
+            // Allocate memory
+            if (line[0] == 'N') {
+                line++;
+                char *token;
+                // Get process number
+                token = strtok(line, " \t");
+                int process = atoi(token);
+                // Get process size
+                token = token = strtok(NULL, " \t");
+                int size = atoi(token);
+                if (algorithm == 'f') {
+                    result = first_fit(head, process, size);
+                } else if (algorithm == 'b') {
+                    result = best_fit(head, process, size);
+                } else if (algorithm == 'w') {
+                    result = worst_fit(head, process, size);
+                }
+                if (result == 0) {
+                    // Could not allocate memory
+                    printf("Process %d failed to allocate %d memory\n", process, size);
+                }
             }
 
-            current = head;
-            printf("--- --- ---\n");
-            while (current != NULL) {
-                printf("Node %d, start %d, end %d, block size %d, free %d\n", current->process, current->start, current->end, current->block_size, current->free);
-                current = current->next;
-            }
-            printf("--- --- ---\n");
-        }
-
-        // Deallocate memory
-        else if (line[0] == 'T') {
-            line++;
-            char *token;
-            // Get process number
-            token = strtok(line, " \t");
-            int process = atoi(token);
-            result = deallocate_process(&head, process);
-            // Could not deallocate memory
-            if (result == 0) {
-                printf("Process %d failed to free memory\n", process);
+            // Deallocate memory
+            else if (line[0] == 'T') {
+                line++;
+                char *token;
+                // Get process number
+                token = strtok(line, " \t");
+                int process = atoi(token);
+                result = deallocate_process(&head, process);
+                if (result == 0) {
+                    // Could not deallocate memory
+                    printf("Process %d failed to free memory\n", process);
+                }
             }
 
-            current = head;
-            printf("--- --- ---\n");
-            while (current != NULL) {
-                printf("Node %d, start %d, end %d, block size %d, free %d\n", current->process, current->start, current->end, current->block_size, current->free);
-                current = current->next;
-            }
-            printf("--- --- ---\n");
-        }
-
-        // Stop program
-        else if (strcmp(line, "S\n") == 0) {
+        } else if (line[0] == 'S') {
+            // Stop program
             break;
         }
     }
@@ -147,17 +128,20 @@ int main(int argc, char **argv) {
     final_largest_fragment = current->block_size;
     while (current != NULL) {
         if (current->free == 1) {
+            // Calculate the final memory available
             final_memory_available += current->block_size;
         }
         if (current->block_size < final_smallest_fragment) {
+            // Find the smallest memory fragment size
             final_smallest_fragment = current->block_size;
         }
         if (current->block_size > final_largest_fragment) {
+            // Find the largest memory fragment size
             final_largest_fragment = current->block_size;
         }
         current = current->next;
     }
-    printf("Total Processes Created: %d\n", total_processes_created);
+    printf("\nTotal Processes Created: %d\n", total_processes_created);
     printf("Total Allocated Memory: %d\n", total_allocated_memory);
     printf("Total Processes Terminated: %d\n", total_processes_terminated);
     printf("Total Freed Memory: %d\n", total_freed_memory);
@@ -170,7 +154,7 @@ int main(int argc, char **argv) {
 
 // First Fit Algorithm
 int first_fit(Node *current, int process, int size) {
-    // Find the first free block that fits the process
+    // Find the first free memory block that fits the process
     while (current != NULL) {
         if (current->free == 1 && current->block_size >= size) {
             return allocate_process(&current, process, size);
@@ -191,7 +175,7 @@ int best_fit(Node *current, int process, int size) {
                 best = current;
             }
         } else {
-            // Find the smallest free block that fits the process
+            // Find the smallest free memory block that fits the process (to create the smallest fragment)
             if (current->free == 1 && current->block_size >= size && current->block_size < best->block_size) {
                 best = current;
             }
@@ -216,7 +200,7 @@ int worst_fit(Node *current, int process, int size) {
                 worst = current;
             }
         } else {
-            // Find the largest free block that fits the process
+            // Find the largest free memory block that fits the process (to create the largest fragment)
             if (current->free == 1 && current->block_size >= size && current->block_size > worst->block_size) {
                 worst = current;
             }
@@ -231,9 +215,10 @@ int worst_fit(Node *current, int process, int size) {
     }
 }
 
-// Function to allocate memory for a process (Called by the Memory Allocation Algorithms above)
+// Function to allocate memory for a process (Called by the Memory Allocation Algorithms)
 int allocate_process(Node **node, int process, int size) {
-        if (size < (*node)->block_size) {
+    if (size < (*node)->block_size) {
+        // New process is smaller than the size of the free memory block
         int new_node_end = (*node)->end;
         (*node)->block_size = size;
         (*node)->end = (*node)->start + size - 1;
@@ -249,6 +234,7 @@ int allocate_process(Node **node, int process, int size) {
         new_node->previous = (*node);
         (*node)->next = new_node;
     } else if (size == (*node)->block_size) {
+        // New process is exactly the size of the free memory block
         (*node)->free = 0;
         (*node)->process = process;
     }
@@ -272,6 +258,7 @@ int deallocate_process(Node **node, int process) {
             // Check if two free blocks of memory need to be merged into one free block
             if (current->next != NULL) {
                 if (current->next->free == 1) {
+                    // Next memory block was also free
                     current->end = current->next->end;
                     current->block_size += current->next->block_size;
                     Node *temp = current->next->next;
@@ -283,6 +270,7 @@ int deallocate_process(Node **node, int process) {
                 }
             } else if (current->previous != NULL) {
                 if (current->previous->free == 1) {
+                    // Previous memory block was also free
                     current->previous->end = current->end;
                     current->previous->block_size += current->block_size;
                     Node *temp = current->next;
