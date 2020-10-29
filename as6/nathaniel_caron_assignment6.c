@@ -147,7 +147,7 @@ int main(int argc, char **argv) {
     printf("Total Freed Memory: %d\n", total_freed_memory);
     printf("Final Memory Available: %d\n", final_memory_available);
     printf("Final Smallest Fragmented Memory Size: %d\n", final_smallest_fragment);
-    printf("Final Largest Fragmented Memory Size: %d\n", final_largest_fragment);
+    printf("Final Largest Fragmented Memory Size: %d\n\n", final_largest_fragment);
 
     return EXIT_SUCCESS;
 }
