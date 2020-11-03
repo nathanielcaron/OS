@@ -25,56 +25,94 @@ int main(int argc, char **argv) {
     // REMOVE THIS
     printf("n = %d\n", n);
 
+    int pages_number = 1 << 20;
+    unsigned int invalid_page_number = pages_number + 1;
+    printf("Invalid page number = %d + 1 = %d\n", pages_number, invalid_page_number);
+
     // Initialize frames array
-    unsigned int frames[n];
+    unsigned int frame_table[n];
     for (i = 0; i < n; i++) {
-        frames[i] = 0;
+        frame_table[i] = invalid_page_number;
     }
 
     // REMOVE THIS
-    printf("Initialized frames array of size %d\n", n);
+    printf("Initialized frame_table array of size %d\n", n);
+
+    unsigned int invalid_frame_number = n + 1;
+    printf("Invalid frame number = %d + 1 = %d\n", n, invalid_frame_number);
 
     // Initialize pages array
-    int pages_number = 1 << 20;
-    unsigned int pages[pages_number];
+    unsigned int page_table[pages_number];
     for (i = 0; i < pages_number; i++) {
-        pages[i] = 0;
+        page_table[i] = invalid_frame_number;
     }
 
     // REMOVE THIS
-    printf("Initialized pages array of size %d\n", pages_number);
+    printf("Initialized page_table array of size %d\n", pages_number);
 
-    unsigned int divisor = 1 << 12;
+    unsigned int page_frame_size = 1 << 12;
     // REMOVE THIS
-    printf("Divisor %d\n", divisor);
+    printf("Divisor %d\n", page_frame_size);
 
-    // Remove this
-    // Bit manipulation test
-    // {
-    //     unsigned int value = 242; // 1111 0010
-    //     unsigned int divisor = 16; // 2^4
-    //     unsigned int top_bits = value / divisor; // 1111
-    //     unsigned int bottom_bits = value % divisor; // 0010
-    //     unsigned int value_without_bottom_bits = top_bits * divisor; // 1111 0000 or 240
-    //     printf("value = %d, divisor = %d, top_bits = %d, bottom_bits = %d, value_without_bottom_bits = %d\n", value, divisor, top_bits, bottom_bits, value_without_bottom_bits);
-    //     printf("value without bottom bits + bottom bits = %d + %d = %d = value\n", value_without_bottom_bits, bottom_bits, value);
-    // }
+    int page_faults = 0;
 
     unsigned int current = 0;
     unsigned int page_number = 0;
     unsigned int offset = 0;
+    unsigned int current_frame_number = 0;
+    unsigned int frame_number = 0;
+    unsigned int previous_page_number = 0;
     
     int line_len = 1000;
     char line[1000] = {0};
+
+    unsigned int physical_address = 0;
+
+    printf("\n--- --- --- --- --- --- --- ---\n");
 
     while (fgets(line, line_len, stdin) != NULL) {
         // Tokenize each line
         sscanf(line, "%u", &current);
         printf("logical address = %u, ", current);
-        page_number = current / divisor; // Top 20 bits
-        offset = current % divisor; // Lower 12 bits
+        page_number = current / page_frame_size; // Top 20 bits
+        offset = current % page_frame_size; // Lower 12 bits
         printf("Page number: %u, ", page_number);
-        printf("Offset: %u\n", offset);
+        printf("Offset: %u, ", offset);
+
+        // Perform work
+        // 1. Page is loaded in a valid frame
+        //      -> Physical address = Frame number * page_frame_size + offset
+        // 2. Page is not loaded in a valid frame (page fault)
+        //      -> Store current frame number in page table, store page number in frame table, Physical address = frame number * page_frame_size + offset, page_faults++, current_frame_number++
+
+        if (page_table[page_number] != invalid_frame_number) {
+            // Page loaded in frame
+            frame_number = page_table[page_number];
+            physical_address = frame_number * page_frame_size + offset;
+            printf("Physical address: %d\n", physical_address);
+        } else {
+            // Page fault
+            frame_number = current_frame_number;
+            if (frame_table[frame_number] != invalid_page_number) {
+                // Frame has a page in it, must clear frame table
+                previous_page_number = frame_table[frame_number];
+                page_table[previous_page_number] = invalid_frame_number;
+            }
+            page_table[page_number] = frame_number;
+            frame_table[frame_number] = page_number;
+            physical_address = frame_number * page_frame_size + offset;
+            printf("Physical address: %d\n", physical_address);
+            current_frame_number = (current_frame_number + 1) % n;
+            printf("current frame number = %d\n", current_frame_number);
+            page_faults++;
+            printf("Page fault!\n");
+        }
     }
+
+    printf("--- --- --- --- --- --- --- ---\n");
+
+    // Print final report
+    printf("\nPage faults: %d\n", page_faults);
+
     return EXIT_SUCCESS;
 }
