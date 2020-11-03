@@ -10,14 +10,15 @@
  * Nathaniel Caron
  * 3598979
  * 
- * Question:
+ * QUESTION:
  * Experiment with the program by changing the (relative) production rate and the consumption
  * rate (change sleep times n and m) to achieve a processes alternation. Explain the results
- * Answer:
+ * ANSWER:
  * When the consumption rate is faster than the production rate, the consumer is constantly waiting for an item to be produced.
  * When the two rates are equal, the process functions well but only a single item is in the buffer at a time.
  * When the production rate is faster than the consumption rate, the consumer will always have items to consume.
  * (Although some items may never be consumed unless the producer stops producing)
+ * IMPORTANT: Could have set a time limit for the producer to stop producing, consume remaining items and terminate.
  */
 
 int n = 0;
@@ -33,9 +34,11 @@ int randomNum() {
     return (rand() % (10 - 1 + 1)) + 1;
 }
 
+// Function to be executed by the child process (Consumer)
 void *consume(void *arg) {
     int current_item = 0;
     
+    // Consume
     while(1) {
         sem_wait(&sem_full);
         sem_wait(&sem_mutex);
@@ -53,15 +56,11 @@ void *consume(void *arg) {
 }
 
 int main(int argc, char **argv) {
-    // Initialize variables
-    int i = 0;
-
-    // Read in m and n
+    // Read in n and m sleep values for producer and consumer
     printf("Enter a vlue for n: ");
     scanf("%d", &n);
     printf("Enter a vlue for m: ");
     scanf("%d", &m);
-
     printf("Parent will sleep for %d seconds, child for %d seconds\n", n, m);
 
     // Initialize semaphores
@@ -69,19 +68,19 @@ int main(int argc, char **argv) {
     sem_init(&sem_full, 0, 0);
     sem_init(&sem_empty, 0, 10);
 
+    // Create child process
     pthread_t child_process;
-
     pthread_create(&child_process, NULL, &consume, NULL);
 
-    int random_num = 0;
     srand(time(0));
+    int random_num = 0;
 
+    // Produce
     while(1) {
 
         // Produce item
         random_num = randomNum();
         printf("Producing %d\n", random_num);
-
 
         sem_wait(&sem_empty);
         sem_wait(&sem_mutex);
