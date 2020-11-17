@@ -1,0 +1,25 @@
+1. 
+What programs did you start? What do you observe from the output of vmstat?
+Answer:
+Started calculator, calendar, files, and terminal
+Free memory decreased, amount of memory used for buffers and cache increased
+The number of processes waiting for run time increased and went back down to zero once all programs were launched
+The number of interrupts and context switches increased significantly then went back down
+
+2. 
+What process has the greatest number of page faults? 
+What is the difference between a major page fault and a minor page fault?
+Answer:
+/usr/bin/gnome-shell
+
+Major Page Fault: Must first copy the page to the disk before replacing it with a new page since the page was written to (dirty)
+Minor Page Fault: Can immediately discard and replace the page in the frame
+A major page fault takes significantly more time and hurts performance more than minor page faults.
+
+3. 
+Can you think of a way to make the system have more major page faults? 
+What command(s) can you do to make this happen?
+Answer:
+If a file is loaded into memory and we write to it, then it will have to be stored on the disk, causing a major page fault if the memory is to be replaced.
+We can easily write to a file with the command:
+echo "cs3413 lab4" > file.txt
