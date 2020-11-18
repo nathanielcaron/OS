@@ -14,9 +14,10 @@
 typedef struct Frame {
     unsigned int page_number;
 	bool dirty;
+    int time_since_use;
 } Frame;
 
-// Structure for Memory Block Node
+// Structure for Page
 typedef struct Page {
     unsigned int frame_number;
 	bool swapped;
@@ -72,6 +73,7 @@ int main(int argc, char **argv) {
     for (i = 0; i < n; i++) {
         frame_table[i].page_number = invalid_page_number;
         frame_table[i].dirty = false;
+        frame_table[i].time_since_use = 0;
     }
 
     // Initialize page directory and page tables
@@ -208,11 +210,29 @@ void first_in_first_out(Page *page_directory[], Frame frame_table[]) {
 }
 
 void least_recently_used(Page *page_directory[], Frame frame_table[]) {
+    int i = 0;
     char operation;
     unsigned int current_logical_address = 0;
     
     int line_len = 1000;
     char line[1000] = {0};
+
+    int current_page_directory = 0;
+    int current_page_number = 0;
+    int current_offset = 0;
+
+    unsigned int page_number = 1 << 20; // 2^20 or 1,048,576
+    unsigned int page_frame_size = 1 << 12; // 2^12 or 4,096
+    unsigned int page_directory_table_size = 1 << 10; // 2^10 or 1,024
+    unsigned int invalid_page_number = page_number + 1;
+    unsigned int invalid_frame_number = n + 1;
+
+    unsigned int current_frame_number = 0;
+    unsigned int current_physical_address = 0;
+
+    unsigned int frame_number_to_replace = 0;
+    unsigned int page_directory_to_replace = 0;
+    unsigned int page_number_to_replace = 0;
 
     while (fgets(line, line_len, stdin) != NULL) {
         int token_num = 0;
@@ -228,14 +248,87 @@ void least_recently_used(Page *page_directory[], Frame frame_table[]) {
             token_num++;
         }
 
-        printf("operation: %c, logical address: %u\n", operation, current_logical_address);
+        // printf("operation: %c, logical address: %u\n", operation, current_logical_address);
 
-        // Perform memory operation
-        if (operation == 'r') {
+        current_page_directory = (current_logical_address / page_frame_size) / page_directory_table_size; // Top 10 bits
+        current_page_number = (current_logical_address / page_frame_size) % page_directory_table_size; // Middle 10 bits
+        current_offset = current_logical_address % page_frame_size; // Lower 12 bits
 
-        } else if (operation == 'w') {
+        // printf("logical address: %u, page directory: %u, page table: %u, offset: %u\n", current_logical_address, current_page_directory, current_page_number, current_offset);
 
+        // remove this
+        printf("---\n");
+        for (i = 0; i < n; i++) {
+            printf("frame %d - page number %u - dirty %d - time since use %d\n", i, frame_table[i].page_number, frame_table[i].dirty, frame_table[i].time_since_use);
         }
+        printf("---\n");
+
+        if ((page_directory[current_page_directory])[current_page_number].frame_number != invalid_frame_number) {
+            // Page hit
+            printf("Page hit\n");
+            current_frame_number = (page_directory[current_page_directory])[current_page_number].frame_number;
+            page_hits++;
+            frame_table[current_frame_number].time_since_use = 0;
+            // Calculated physical address
+            current_physical_address = current_frame_number * page_frame_size + current_offset;
+            if (operation == 'w') {
+                // write to page
+                frame_table[current_frame_number].dirty = true;
+            }
+        } else {
+            printf("Page fault\n");
+            // Page fault
+            current_frame_number = frame_number_to_replace;
+
+            if (frame_table[current_frame_number].page_number != invalid_page_number) {
+                // Frame has a page in it, must clear frame table and page table
+                page_directory_to_replace = frame_table[current_frame_number].page_number / page_directory_table_size;
+                page_number_to_replace = frame_table[current_frame_number].page_number % page_directory_table_size;
+                (page_directory[page_directory_to_replace])[page_number_to_replace].frame_number = invalid_frame_number;
+                if (frame_table[current_frame_number].dirty == true) {
+                    // Major page fault
+                    major_page_faults++;
+                    if ((page_directory[page_directory_to_replace])[page_number_to_replace].swapped == false) {
+                        (page_directory[page_directory_to_replace])[page_number_to_replace].swapped = true;
+                        pages_in_swap++;
+                    }
+                } else {
+                    // Minor page fault
+                    minor_page_faults++;
+                }
+            } else {
+                // Minor page fault
+                minor_page_faults++;
+            }
+
+            (page_directory[current_page_directory])[current_page_number].frame_number = current_frame_number;
+            frame_table[current_frame_number].page_number = current_page_directory * page_directory_table_size + current_page_number;
+            frame_table[current_frame_number].dirty = false;
+            frame_table[current_frame_number].time_since_use = 0;
+
+            if (operation == 'w') {
+                // write to page
+                frame_table[current_frame_number].dirty = true;
+            }
+            // Calculate physical address
+            current_physical_address = current_frame_number * page_frame_size + current_offset;
+        }
+
+        // Find the least recently used page frame
+        for (i = 0; i < n; i++) {
+            if (frame_table[i].time_since_use > frame_table[frame_number_to_replace].time_since_use) {
+                frame_number_to_replace = i;
+            }
+        }
+        // Increment all times since use
+        for (i = 0; i < n; i++) {
+            frame_table[i].time_since_use++;
+        }
+
+        // printf("dirty: %d\n", frame_table[current_frame_number].dirty);
+        // logical address -> physical address
+        printf("%u -> %u\n", current_logical_address, current_physical_address);
+        
     }
 }
 
