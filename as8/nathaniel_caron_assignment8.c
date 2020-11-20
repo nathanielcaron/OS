@@ -163,6 +163,7 @@ void first_in_first_out(Page *page_directory[], Frame frame_table[]) {
 
         if ((page_directory[current_page_directory])[current_page_number].frame_number != invalid_frame_number) {
             // Page hit
+            // printf("Page hit - ");
             current_frame_number = (page_directory[current_page_directory])[current_page_number].frame_number;
             page_hits++;
             // Calculate physical address
@@ -173,6 +174,7 @@ void first_in_first_out(Page *page_directory[], Frame frame_table[]) {
             }
         } else {
             // Page fault
+            // printf("Page fault - ");
             current_frame_number = frame_number_to_replace;
 
             if (frame_table[current_frame_number].page_number != invalid_page_number) {
@@ -269,6 +271,12 @@ void least_recently_used(Page *page_directory[], Frame frame_table[]) {
         // }
         // printf("---\n");
 
+        // Increment all times since use
+        for (i = 0; i < n; i++) {
+            // printf("%d\n", frame_table[i].count);
+            frame_table[i].count++;
+        }
+
         if ((page_directory[current_page_directory])[current_page_number].frame_number != invalid_frame_number) {
             // Page hit
             // printf("Page hit\n");
@@ -328,10 +336,6 @@ void least_recently_used(Page *page_directory[], Frame frame_table[]) {
                 frame_number_to_replace = i;
             }
         }
-        // Increment all times since use
-        for (i = 0; i < n; i++) {
-            frame_table[i].count++;
-        }
 
         // printf("dirty: %d\n", frame_table[current_frame_number].dirty);
         // logical address -> physical address
@@ -372,19 +376,21 @@ void optimal(Page *page_directory[], Frame frame_table[]) {
         }
         input_count++;
     }
+
     // TODO remove this
-    printf("Read in %ld input items\n", input_count);
-    for (i = 0; i < input_count; i++) {
-        printf("Input with operation '%c' and logical address %u\n", input[i].operation, input[i].logical_address);
-    }
+    // printf("Read in %ld input items\n", input_count);
+    // for (i = 0; i < input_count; i++) {
+    //     printf("%d - Input with operation '%c' and logical address %u\n", i, input[i].operation, input[i].logical_address);
+    // }
+    // printf("--- --- ---\n\n");
 
     char current_operation;
     unsigned int current_logical_address = 0;
 
-    int current_page = 0;
-    int current_page_directory = 0;
-    int current_page_number = 0;
-    int current_offset = 0;
+    unsigned int current_page = 0;
+    unsigned int current_page_directory = 0;
+    unsigned int current_page_number = 0;
+    unsigned int current_offset = 0;
 
     unsigned int page_number = 1 << 20; // 2^20 or 1,048,576
     unsigned int page_frame_size = 1 << 12; // 2^12 or 4,096
@@ -399,8 +405,13 @@ void optimal(Page *page_directory[], Frame frame_table[]) {
     unsigned int page_directory_to_replace = 0;
     unsigned int page_number_to_replace = 0;
 
+    unsigned int future_page_directory = 0;
+    unsigned int future_page_number = 0;
+    unsigned int future_frame_number = 0;
+
     int input_index;
     for (input_index = 0; input_index < input_count; input_index++) {
+        // printf("%d - Start - ", input_index);
         current_operation = input[input_index].operation;
         current_logical_address = input[input_index].logical_address;
 
@@ -414,15 +425,17 @@ void optimal(Page *page_directory[], Frame frame_table[]) {
         // printf("logical address: %u, page directory: %u, page table: %u, offset: %u\n", current_logical_address, current_page_directory, current_page_number, current_offset);
 
         // TODO: Remove this
-        printf("---\n");
-        for (i = 0; i < n; i++) {
-            printf("frame %d - page number %u - dirty %d - time since use %d\n", i, frame_table[i].page_number, frame_table[i].dirty, frame_table[i].count);
-        }
-        printf("---\n");
+        // printf("---\n");
+        // for (i = 0; i < n; i++) {
+        //     printf("frame %d - page number %u - dirty %d - time since use %d\n", i, frame_table[i].page_number, frame_table[i].dirty, frame_table[i].count);
+        // }
+        // printf("---\n");
+
+        // printf("Calculations done - ");
 
         if ((page_directory[current_page_directory])[current_page_number].frame_number != invalid_frame_number) {
             // Page hit
-            printf("Page hit\n");
+            // printf("Page hit - ");
             current_frame_number = (page_directory[current_page_directory])[current_page_number].frame_number;
             page_hits++;
             if (current_operation == 'w') {
@@ -431,7 +444,7 @@ void optimal(Page *page_directory[], Frame frame_table[]) {
             }
         } else {
             // Page fault
-            printf("Page fault\n");
+            // printf("Page fault - ");
             if (input_index < n) {
                 // Have free frame
                 current_frame_number = frame_number_to_replace;
@@ -442,13 +455,13 @@ void optimal(Page *page_directory[], Frame frame_table[]) {
                 // Find optimal page to replace
                 order_to_come = 0;
                 for (i = input_index+1; i < input_count; i++) {
-                    for (j = 0; j < n; j++) {
-                        if (frame_table[j].page_number == (input[i].logical_address / page_frame_size)) {
-                            if (frame_table[j].count == 0) {
+                    future_page_directory = (input[i].logical_address / page_frame_size) / page_directory_table_size; // Top 10 bits
+                    future_page_number = (input[i].logical_address / page_frame_size) % page_directory_table_size; // Middle 10 bits
+                    future_frame_number = (page_directory[future_page_directory])[future_page_number].frame_number;
+                    if (future_frame_number != invalid_frame_number) {
+                        if (frame_table[future_frame_number].count == 0) {
                                 order_to_come++;
-                                frame_table[j].count = order_to_come;
-                            }
-                            break;
+                                frame_table[future_frame_number].count = order_to_come;
                         }
                     }
                     // all pages found in future
@@ -457,9 +470,11 @@ void optimal(Page *page_directory[], Frame frame_table[]) {
                     }
                 }
 
-                printf("***\n");
+                // printf("Dtermined page to replace - ");
+
+                // printf("***\n");
                 for (i = 0; i < n; i++) {
-                    printf("frame %d - count: %d\n", i, frame_table[i].count);
+                    // printf("frame %d - count: %d\n", i, frame_table[i].count);
                     if (frame_table[i].count == 0) {
                         frame_number_to_replace = i;
                         break;
@@ -467,7 +482,7 @@ void optimal(Page *page_directory[], Frame frame_table[]) {
                         frame_number_to_replace = i;
                     }
                 }
-                printf("***\n");
+                // printf("***\n");
 
                 for (i = 0; i < n; i++) {
                     // reset count for all frames
@@ -476,20 +491,22 @@ void optimal(Page *page_directory[], Frame frame_table[]) {
 
                 current_frame_number = frame_number_to_replace;
 
-                // Frame has a page in it, must clear frame table and page table
-                page_directory_to_replace = frame_table[current_frame_number].page_number / page_directory_table_size;
-                page_number_to_replace = frame_table[current_frame_number].page_number % page_directory_table_size;
-                (page_directory[page_directory_to_replace])[page_number_to_replace].frame_number = invalid_frame_number;
-                if (frame_table[current_frame_number].dirty == true) {
-                    // Major page fault
-                    major_page_faults++;
-                    if ((page_directory[page_directory_to_replace])[page_number_to_replace].swapped == false) {
-                        (page_directory[page_directory_to_replace])[page_number_to_replace].swapped = true;
-                        pages_in_swap++;
+                if (frame_table[current_frame_number].page_number != invalid_page_number) {
+                    // Frame has a page in it, must clear frame table and page table
+                    page_directory_to_replace = frame_table[current_frame_number].page_number / page_directory_table_size;
+                    page_number_to_replace = frame_table[current_frame_number].page_number % page_directory_table_size;
+                    (page_directory[page_directory_to_replace])[page_number_to_replace].frame_number = invalid_frame_number;
+                    if (frame_table[current_frame_number].dirty == true) {
+                        // Major page fault
+                        major_page_faults++;
+                        if ((page_directory[page_directory_to_replace])[page_number_to_replace].swapped == false) {
+                            (page_directory[page_directory_to_replace])[page_number_to_replace].swapped = true;
+                            pages_in_swap++;
+                        }
+                    } else {
+                        // Minor page fault
+                        minor_page_faults++;
                     }
-                } else {
-                    // Minor page fault
-                    minor_page_faults++;
                 }
             }
 
@@ -505,6 +522,7 @@ void optimal(Page *page_directory[], Frame frame_table[]) {
         // Calculate physical address
         current_physical_address = current_frame_number * page_frame_size + current_offset;
         // logical address -> physical address
-        printf("%u -> %u\n", current_logical_address, current_physical_address);
+        printf("%d - %u -> %u\n", input_index, current_logical_address, current_physical_address);
+        // printf("End\n");
     }
 }
