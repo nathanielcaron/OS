@@ -34,13 +34,29 @@ void first_in_first_out(Page *page_directory[], Frame frame_table[]);
 void least_recently_used(Page *page_directory[], Frame frame_table[]);
 void optimal(Page *page_directory[], Frame frame_table[]);
 
-
 // Global variables
 int n = 0;
 int minor_page_faults = 0;
 int major_page_faults = 0;
 int page_hits = 0;
 int pages_in_swap = 0;
+
+unsigned int page_number = 1 << 20; // 2^20 or 1,048,576
+unsigned int page_directory_table_size = 1 << 10; // 2^10 or 1,024
+unsigned int page_frame_size = 1 << 12; // 2^12 or 4,096
+unsigned int invalid_page_number;
+unsigned int invalid_frame_number;
+
+unsigned int current_page = 0;
+unsigned int current_page_directory = 0;
+unsigned int current_page_number = 0;
+unsigned int current_offset = 0;
+unsigned int current_frame_number = 0;
+unsigned int current_physical_address = 0;
+
+unsigned int frame_number_to_replace = 0;
+unsigned int page_directory_to_replace = 0;
+unsigned int page_number_to_replace = 0;
 
 int main(int argc, char **argv) {
     int i = 0;
@@ -65,13 +81,13 @@ int main(int argc, char **argv) {
         }
     }
 
+    // TODO: Remove this
     printf("algorithm: %c, n: %d\n", algorithm, n);
 
-    unsigned int page_number = 1 << 20; // 2^20 or 1,048,576
-    unsigned int page_directory_table_size = 1 << 10; // 2^10 or 1,024
-    unsigned int page_frame_size = 1 << 12; // 2^12 or 4,096
-    unsigned int invalid_page_number = page_number + 1;
-    unsigned int invalid_frame_number = n + 1;
+    invalid_page_number = page_number + 1;
+    invalid_frame_number = n + 1;
+
+    // TODO: Remove this
     printf("invalid page number: %d, invalid frame number: %d\n", invalid_page_number, invalid_frame_number);
 
     // Initialize frames array
@@ -94,6 +110,8 @@ int main(int argc, char **argv) {
         }
         count++;
     }
+
+    // TODO: Remove this
     printf("Initialized %d page tables\n", count);
     printf("Accessing page table 0 position 0 -> %d\n", (page_directory[0])[0].frame_number);
     printf("Accessing page table 1023 position 1023 -> %d\n\n", (page_directory[1023])[1023].frame_number);
@@ -118,26 +136,9 @@ int main(int argc, char **argv) {
 void first_in_first_out(Page *page_directory[], Frame frame_table[]) {
     char operation;
     unsigned int current_logical_address = 0;
-    
+
     int line_len = 1000;
     char line[1000] = {0};
-
-    int current_page_directory = 0;
-    int current_page_number = 0;
-    int current_offset = 0;
-
-    unsigned int page_number = 1 << 20; // 2^20 or 1,048,576
-    unsigned int page_frame_size = 1 << 12; // 2^12 or 4,096
-    unsigned int page_directory_table_size = 1 << 10; // 2^10 or 1,024
-    unsigned int invalid_page_number = page_number + 1;
-    unsigned int invalid_frame_number = n + 1;
-
-    unsigned int current_frame_number = 0;
-    unsigned int current_physical_address = 0;
-
-    unsigned int frame_number_to_replace = 0;
-    unsigned int page_directory_to_replace = 0;
-    unsigned int page_number_to_replace = 0;
 
     while (fgets(line, line_len, stdin) != NULL) {
         int token_num = 0;
@@ -224,23 +225,6 @@ void least_recently_used(Page *page_directory[], Frame frame_table[]) {
     
     int line_len = 1000;
     char line[1000] = {0};
-
-    int current_page_directory = 0;
-    int current_page_number = 0;
-    int current_offset = 0;
-
-    unsigned int page_number = 1 << 20; // 2^20 or 1,048,576
-    unsigned int page_frame_size = 1 << 12; // 2^12 or 4,096
-    unsigned int page_directory_table_size = 1 << 10; // 2^10 or 1,024
-    unsigned int invalid_page_number = page_number + 1;
-    unsigned int invalid_frame_number = n + 1;
-
-    unsigned int current_frame_number = 0;
-    unsigned int current_physical_address = 0;
-
-    unsigned int frame_number_to_replace = 0;
-    unsigned int page_directory_to_replace = 0;
-    unsigned int page_number_to_replace = 0;
 
     while (fgets(line, line_len, stdin) != NULL) {
         int token_num = 0;
@@ -387,24 +371,6 @@ void optimal(Page *page_directory[], Frame frame_table[]) {
     char current_operation;
     unsigned int current_logical_address = 0;
 
-    unsigned int current_page = 0;
-    unsigned int current_page_directory = 0;
-    unsigned int current_page_number = 0;
-    unsigned int current_offset = 0;
-
-    unsigned int page_number = 1 << 20; // 2^20 or 1,048,576
-    unsigned int page_frame_size = 1 << 12; // 2^12 or 4,096
-    unsigned int page_directory_table_size = 1 << 10; // 2^10 or 1,024
-    unsigned int invalid_page_number = page_number + 1;
-    unsigned int invalid_frame_number = n + 1;
-
-    unsigned int current_frame_number = 0;
-    unsigned int current_physical_address = 0;
-
-    unsigned int frame_number_to_replace = 0;
-    unsigned int page_directory_to_replace = 0;
-    unsigned int page_number_to_replace = 0;
-
     unsigned int future_page_directory = 0;
     unsigned int future_page_number = 0;
     unsigned int future_frame_number = 0;
@@ -470,7 +436,7 @@ void optimal(Page *page_directory[], Frame frame_table[]) {
                     }
                 }
 
-                // printf("Dtermined page to replace - ");
+                // printf("Determined page to replace - ");
 
                 // printf("***\n");
                 for (i = 0; i < n; i++) {
