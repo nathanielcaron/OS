@@ -35,6 +35,8 @@ void least_recently_used(Page *page_directory[], Frame frame_table[]);
 void optimal(Page *page_directory[], Frame frame_table[]);
 
 // Global variables
+int i = 0;
+int j = 0;
 int n = 0;
 int minor_page_faults = 0;
 int major_page_faults = 0;
@@ -59,8 +61,6 @@ unsigned int page_directory_to_replace = 0;
 unsigned int page_number_to_replace = 0;
 
 int main(int argc, char **argv) {
-    int i = 0;
-    int j = 0;
     char algorithm = 'f';
 
     // Read in frame number n and page replacement algorithm from cmd line arguments
@@ -88,7 +88,7 @@ int main(int argc, char **argv) {
     invalid_frame_number = n + 1;
 
     // TODO: Remove this
-    printf("invalid page number: %d, invalid frame number: %d\n", invalid_page_number, invalid_frame_number);
+    // printf("invalid page number: %d, invalid frame number: %d\n", invalid_page_number, invalid_frame_number);
 
     // Initialize frames array
     Frame frame_table[n];
@@ -98,23 +98,16 @@ int main(int argc, char **argv) {
         frame_table[i].count = 0;
     }
 
-    // Initialize page directory and page tables
-    int count = 0;
+    // Initialize page directory (Don't allocate memory for page tables yet, see algorithms for dynamic page allocation)
     Page *page_directory[page_directory_table_size]; // page directory size 2^10
     for (i = 0; i < page_directory_table_size; i++) {
-        Page *base_table_pointer = (Page *)malloc(page_directory_table_size * sizeof(Page));
-        page_directory[i] = base_table_pointer;
-        for (j = 0; j < page_directory_table_size; j++) {
-            base_table_pointer[j].frame_number = invalid_frame_number;
-            base_table_pointer[j].swapped = false;
-        }
-        count++;
+        page_directory[i] = NULL;
     }
 
     // TODO: Remove this
-    printf("Initialized %d page tables\n", count);
-    printf("Accessing page table 0 position 0 -> %d\n", (page_directory[0])[0].frame_number);
-    printf("Accessing page table 1023 position 1023 -> %d\n\n", (page_directory[1023])[1023].frame_number);
+    // printf("Initialized %d page tables\n", count);
+    // printf("Accessing page table 0 position 0 -> %d\n", (page_directory[0])[0].frame_number);
+    // printf("Accessing page table 1023 position 1023 -> %d\n\n", (page_directory[1023])[1023].frame_number);
 
     if (algorithm == 'f') {
         first_in_first_out(page_directory, frame_table);
@@ -161,6 +154,16 @@ void first_in_first_out(Page *page_directory[], Frame frame_table[]) {
         current_offset = current_logical_address % page_frame_size; // Lower 12 bits
 
         // printf("logical address: %u, page directory: %u, page table: %u, offset: %u\n", current_logical_address, current_page_directory, current_page_number, current_offset);
+
+        // Dynamically allocate page tables as needed
+        if (page_directory[current_page_directory] == NULL) {
+            Page *base_table_pointer = (Page *)malloc(page_directory_table_size * sizeof(Page));
+            page_directory[current_page_directory] = base_table_pointer;
+            for (i = 0; i < page_directory_table_size; i++) {
+                base_table_pointer[i].frame_number = invalid_frame_number;
+                base_table_pointer[i].swapped = false;
+            }
+        }
 
         if ((page_directory[current_page_directory])[current_page_number].frame_number != invalid_frame_number) {
             // Page hit
@@ -247,6 +250,16 @@ void least_recently_used(Page *page_directory[], Frame frame_table[]) {
         current_offset = current_logical_address % page_frame_size; // Lower 12 bits
 
         // printf("logical address: %u, page directory: %u, page table: %u, offset: %u\n", current_logical_address, current_page_directory, current_page_number, current_offset);
+
+        // Dynamically allocate page tables as needed
+        if (page_directory[current_page_directory] == NULL) {
+            Page *base_table_pointer = (Page *)malloc(page_directory_table_size * sizeof(Page));
+            page_directory[current_page_directory] = base_table_pointer;
+            for (i = 0; i < page_directory_table_size; i++) {
+                base_table_pointer[i].frame_number = invalid_frame_number;
+                base_table_pointer[i].swapped = false;
+            }
+        }
 
         // TODO: Remove this
         // printf("---\n");
@@ -388,6 +401,16 @@ void optimal(Page *page_directory[], Frame frame_table[]) {
         current_page_number = (current_logical_address / page_frame_size) % page_directory_table_size; // Middle 10 bits
         current_offset = current_logical_address % page_frame_size; // Lower 12 bits
 
+        // Dynamically allocate page tables as needed
+        if (page_directory[current_page_directory] == NULL) {
+            Page *base_table_pointer = (Page *)malloc(page_directory_table_size * sizeof(Page));
+            page_directory[current_page_directory] = base_table_pointer;
+            for (i = 0; i < page_directory_table_size; i++) {
+                base_table_pointer[i].frame_number = invalid_frame_number;
+                base_table_pointer[i].swapped = false;
+            }
+        }
+
         // printf("logical address: %u, page directory: %u, page table: %u, offset: %u\n", current_logical_address, current_page_directory, current_page_number, current_offset);
 
         // TODO: Remove this
@@ -423,6 +446,17 @@ void optimal(Page *page_directory[], Frame frame_table[]) {
                 for (i = input_index+1; i < input_count; i++) {
                     future_page_directory = (input[i].logical_address / page_frame_size) / page_directory_table_size; // Top 10 bits
                     future_page_number = (input[i].logical_address / page_frame_size) % page_directory_table_size; // Middle 10 bits
+
+                    // Dynamically allocate page tables as needed
+                    if (page_directory[future_page_directory] == NULL) {
+                        Page *base_table_pointer = (Page *)malloc(page_directory_table_size * sizeof(Page));
+                        page_directory[future_page_directory] = base_table_pointer;
+                        for (i = 0; i < page_directory_table_size; i++) {
+                            base_table_pointer[i].frame_number = invalid_frame_number;
+                            base_table_pointer[i].swapped = false;
+                        }
+                    }
+
                     future_frame_number = (page_directory[future_page_directory])[future_page_number].frame_number;
                     if (future_frame_number != invalid_frame_number) {
                         if (frame_table[future_frame_number].count == 0) {
@@ -461,6 +495,17 @@ void optimal(Page *page_directory[], Frame frame_table[]) {
                     // Frame has a page in it, must clear frame table and page table
                     page_directory_to_replace = frame_table[current_frame_number].page_number / page_directory_table_size;
                     page_number_to_replace = frame_table[current_frame_number].page_number % page_directory_table_size;
+
+                    // Dynamically allocate page tables as needed
+                    if (page_directory[page_directory_to_replace] == NULL) {
+                        Page *base_table_pointer = (Page *)malloc(page_directory_table_size * sizeof(Page));
+                        page_directory[page_directory_to_replace] = base_table_pointer;
+                        for (i = 0; i < page_directory_table_size; i++) {
+                            base_table_pointer[i].frame_number = invalid_frame_number;
+                            base_table_pointer[i].swapped = false;
+                        }
+                    }
+
                     (page_directory[page_directory_to_replace])[page_number_to_replace].frame_number = invalid_frame_number;
                     if (frame_table[current_frame_number].dirty == true) {
                         // Major page fault
