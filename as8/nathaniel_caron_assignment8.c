@@ -213,6 +213,7 @@ void least_recently_used(Page *page_directory[], Frame frame_table[]) {
     int line_len = 1000;
     char line[1000] = {0};
 
+    int input_index = 0;
     while (fgets(line, line_len, stdin) != NULL) {
         int token_num = 0;
 
@@ -255,7 +256,13 @@ void least_recently_used(Page *page_directory[], Frame frame_table[]) {
             }
         } else {
             // PAGE FAULT
+            
             current_frame_number = frame_number_to_replace;
+
+            if (input_index < n) {
+                // Have free frame
+                current_frame_number = input_index;
+            }
 
             if (frame_table[current_frame_number].page_number != invalid_page_number) {
                 // Frame has a page in it, must clear frame table and page table
@@ -302,6 +309,7 @@ void least_recently_used(Page *page_directory[], Frame frame_table[]) {
 
         // logical address -> physical address
         printf("%u -> %u\n", current_logical_address, current_physical_address);
+        input_index++;
     }
 }
 
