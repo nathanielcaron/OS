@@ -28,8 +28,8 @@ typedef struct Request {
 // Function templates
 void firstInFirstOut(Request *requests);
 void shortestSeekTimeFirst(Request *requests);
-void cScan();
-void look();
+void cScan(Request *requests);
+void look(Request *requests);
 void checkForArrivedRequests(Request *requests);
 int timeRequiredForRequest(int distance, bool reverse_direction);
 void initRequests(Request **requests, size_t *size);
@@ -105,9 +105,9 @@ int main(int argc, char **argv) {
     } else if (algorithm == 't') {
         shortestSeekTimeFirst(requests);
     } else if (algorithm == 'c') {
-        cScan();
+        cScan(requests);
     } else if (algorithm == 'l') {
-        look();
+        look(requests);
     }
 
     // Print Final Report
@@ -273,12 +273,224 @@ void shortestSeekTimeFirst(Request *requests) {
     }
 }
 
-void cScan() {
+void cScan(Request *requests) {
+    int request_to_service = 0;
+    bool reverse_direction = false;
+    bool done = false;
+    bool done_next_request = false;
 
+    int closest_request = 0;
+    int closest_request_index = 0;
+    int current_request_distance = 0;
+
+    int current_sector = 0;
+    int current_distance = 0;
+    int current_time_required = 0;
+
+    while (!done) {
+        checkForArrivedRequests(requests);
+
+        if (arrived_requests_index > 0) {
+            done_next_request = false;
+            while (!done_next_request) {
+                printf("Must find next request\n");
+                // Determine the request to service
+                if (movement_direction == 'a') {
+                    closest_request = 10000;
+                    closest_request_index = -1;
+                    for (i = 0; i < arrived_requests_index; i++) {
+                        if (requests[i].arrived && !requests[i].done && requests[i].sector >= head_position) {
+                            current_request_distance = abs(requests[i].sector - head_position);
+                            if (current_request_distance < closest_request) {
+                                closest_request = current_request_distance;
+                                closest_request_index = i;
+                            }
+                        }
+                    }
+                    if (closest_request_index == -1) {
+                        // No request above current head position, must wrap around
+                        total_head_movement += (9999 - head_position) + 1;
+                        head_position = 0;
+                    } else {
+                        done_next_request = true;
+                    }
+                } else if (movement_direction == 'd') {
+                    closest_request = 10000;
+                    closest_request_index = -1;
+                    for (i = 0; i < arrived_requests_index; i++) {
+                        if (requests[i].arrived && !requests[i].done && requests[i].sector <= head_position) {
+                            current_request_distance = abs(requests[i].sector - head_position);
+                            if (current_request_distance < closest_request) {
+                                closest_request = current_request_distance;
+                                closest_request_index = i;
+                            }
+                        }
+                    }
+                    if (closest_request_index == -1) {
+                        // No request above current head position, must wrap around
+                        total_head_movement += (head_position - 0) + 1;
+                        head_position = 9999;
+                    } else {
+                        done_next_request = true;
+                    }
+                }
+            }
+
+            printf("*** Closest request: %d - request %d ***\n", closest_request, requests[closest_request_index].sector);
+        }
+
+        request_to_service = closest_request_index;
+
+        if (requests[request_to_service].arrived && !requests[request_to_service].done) {
+            current_sector = requests[request_to_service].sector;
+            if (head_position == current_sector) {
+                // No movement required
+                current_distance = 0;
+            } else if (head_position > current_sector) {
+                // Must move down
+                current_distance = head_position - current_sector;
+            } else if (head_position < current_sector) {
+                // Must move up
+                current_distance = current_sector - head_position;
+            }
+
+            // Calculate time required and set new head position
+            current_time_required = timeRequiredForRequest(current_distance, reverse_direction);
+            head_position = current_sector;
+            // Mark request as done
+            requests[request_to_service].done = true;
+            requests_done++;
+            // Update time, total head movement, and move on to next request
+            current_time += current_time_required;
+            total_head_movement += current_distance;
+            request_to_service++;
+        } else {
+            current_time++;
+        }
+
+        printf("--- time %d - total head movement %d - current time required %d ---\n", current_time, total_head_movement, current_time_required);
+
+        for (i = 0; i < request_count; i++) {
+            printf("%d - sector: %d - arrival - %d - arrived %d - done %d\n", i, requests[i].sector, requests[i].arrival, requests[i].arrived, requests[i].done);
+        }
+
+        // Check if all requests have been serviced
+        if (requests_done == request_count) {
+            done = true;
+            total_service_time = current_time - first_request_arrival;
+        }
+    }
 }
 
-void look() {
+void look(Request *requests) {
+int request_to_service = 0;
+    bool reverse_direction = false;
+    bool done = false;
+    bool done_next_request = false;
 
+    int closest_request = 0;
+    int closest_request_index = 0;
+    int current_request_distance = 0;
+
+    int current_sector = 0;
+    int current_distance = 0;
+    int current_time_required = 0;
+
+    while (!done) {
+        checkForArrivedRequests(requests);
+
+        reverse_direction = false;
+
+        if (arrived_requests_index > 0) {
+            done_next_request = false;
+            while (!done_next_request) {
+                printf("Must find next request\n");
+                // Determine the request to service
+                if (movement_direction == 'a') {
+                    closest_request = 10000;
+                    closest_request_index = -1;
+                    for (i = 0; i < arrived_requests_index; i++) {
+                        if (requests[i].arrived && !requests[i].done && requests[i].sector >= head_position) {
+                            current_request_distance = abs(requests[i].sector - head_position);
+                            if (current_request_distance < closest_request) {
+                                closest_request = current_request_distance;
+                                closest_request_index = i;
+                            }
+                        }
+                    }
+                    if (closest_request_index == -1) {
+                        // No request above current head position, switch direction
+                        movement_direction = 'd';
+                        reverse_direction = true;
+                    } else {
+                        done_next_request = true;
+                    }
+                } else if (movement_direction == 'd') {
+                    closest_request = 10000;
+                    closest_request_index = -1;
+                    for (i = 0; i < arrived_requests_index; i++) {
+                        if (requests[i].arrived && !requests[i].done && requests[i].sector <= head_position) {
+                            current_request_distance = abs(requests[i].sector - head_position);
+                            if (current_request_distance < closest_request) {
+                                closest_request = current_request_distance;
+                                closest_request_index = i;
+                            }
+                        }
+                    }
+                    if (closest_request_index == -1) {
+                        // No request above current head position, switch direction
+                        movement_direction = 'a';
+                        reverse_direction = true;
+                    } else {
+                        done_next_request = true;
+                    }
+                }
+            }
+
+            printf("*** Closest request: %d - request %d ***\n", closest_request, requests[closest_request_index].sector);
+        }
+
+        request_to_service = closest_request_index;
+
+        if (requests[request_to_service].arrived && !requests[request_to_service].done) {
+            current_sector = requests[request_to_service].sector;
+            if (head_position == current_sector) {
+                // No movement required
+                current_distance = 0;
+            } else if (head_position > current_sector) {
+                // Must move down
+                current_distance = head_position - current_sector;
+            } else if (head_position < current_sector) {
+                // Must move up
+                current_distance = current_sector - head_position;
+            }
+
+            // Calculate time required and set new head position
+            current_time_required = timeRequiredForRequest(current_distance, reverse_direction);
+            head_position = current_sector;
+            // Mark request as done
+            requests[request_to_service].done = true;
+            requests_done++;
+            // Update time, total head movement, and move on to next request
+            current_time += current_time_required;
+            total_head_movement += current_distance;
+            request_to_service++;
+        } else {
+            current_time++;
+        }
+
+        printf("--- time %d - total head movement %d - current time required %d ---\n", current_time, total_head_movement, current_time_required);
+
+        for (i = 0; i < request_count; i++) {
+            printf("%d - sector: %d - arrival - %d - arrived %d - done %d\n", i, requests[i].sector, requests[i].arrival, requests[i].arrived, requests[i].done);
+        }
+
+        // Check if all requests have been serviced
+        if (requests_done == request_count) {
+            done = true;
+            total_service_time = current_time - first_request_arrival;
+        }
+    }
 }
 
 void checkForArrivedRequests(Request *requests) {
@@ -336,12 +548,3 @@ int getRequests(Request **requests, size_t *requests_size) {
 
     return request_count;
 }
-
-// Function to create a request node
-// RequestNode* createNode(int sector, int arrival) {
-// 	RequestNode* node = (RequestNode*)malloc(sizeof(RequestNode));
-// 	node->sector = sector;
-//     node->arrival = arrival;
-// 	node->next = NULL;
-// 	return node;
-// }
