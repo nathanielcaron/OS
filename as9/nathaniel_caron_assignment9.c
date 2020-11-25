@@ -290,6 +290,8 @@ void cScan(Request *requests) {
     while (!done) {
         checkForArrivedRequests(requests);
 
+        current_distance = 0;
+
         if (arrived_requests_index > 0) {
             done_next_request = false;
             while (!done_next_request) {
@@ -309,7 +311,8 @@ void cScan(Request *requests) {
                     }
                     if (closest_request_index == -1) {
                         // No request above current head position, must wrap around
-                        total_head_movement += (9999 - head_position) + 1;
+                        // total_head_movement += (9999 - head_position) + 1;
+                        current_distance = (9999 - head_position) + 1;
                         head_position = 0;
                     } else {
                         done_next_request = true;
@@ -328,7 +331,8 @@ void cScan(Request *requests) {
                     }
                     if (closest_request_index == -1) {
                         // No request above current head position, must wrap around
-                        total_head_movement += (head_position - 0) + 1;
+                        // total_head_movement += (head_position - 0) + 1;
+                        current_distance = (head_position - 0) + 1;
                         head_position = 9999;
                     } else {
                         done_next_request = true;
@@ -345,14 +349,16 @@ void cScan(Request *requests) {
             current_sector = requests[request_to_service].sector;
             if (head_position == current_sector) {
                 // No movement required
-                current_distance = 0;
+                current_distance += 0;
             } else if (head_position > current_sector) {
                 // Must move down
-                current_distance = head_position - current_sector;
+                current_distance += head_position - current_sector;
             } else if (head_position < current_sector) {
                 // Must move up
-                current_distance = current_sector - head_position;
+                current_distance += current_sector - head_position;
             }
+
+            printf("Current distance: %d", current_distance);
 
             // Calculate time required and set new head position
             current_time_required = timeRequiredForRequest(current_distance, reverse_direction);
