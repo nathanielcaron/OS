@@ -12,18 +12,11 @@
 
 // Structure to represent a request
 typedef struct Request {
-    int sector;
-    int arrival;
+    unsigned int sector;
+    unsigned int arrival;
     bool arrived;
     bool done;
 } Request;
-
-// Structure to represent a request Node
-// typedef struct RequestNode {
-//     int sector;
-//     int arrival;
-//     struct RequestNode* next;
-// } RequestNode;
 
 // Function templates
 void firstInFirstOut(Request *requests);
@@ -47,14 +40,16 @@ int request_count = 0;
 int current_time = 0;
 int arrived_requests_index = 0;
 int requests_done = 0;
-
 int first_request_arrival = 0;
-
 int total_head_movement = 0;
 int total_service_time = 0;
 
+int request_to_service = 0;
+bool reverse_direction = false;
+bool done = false;
+
 int main(int argc, char **argv) {
-    // Read in frame number n and page replacement algorithm from cmd line arguments
+    // Read in disk scheduling algorithm, initial head position, and initial movement direction from cmd line arguments
     if (argc > 1) {
         for (i = 0; i < argc; i++) {
             if (strcmp(argv[i], "F") == 0) {
@@ -82,7 +77,7 @@ int main(int argc, char **argv) {
     }
 
     // TODO: remove this
-    printf("algorithm: %c, starting head position: %u, starting movement direction: %c\n", algorithm, head_position, movement_direction);
+    // printf("algorithm: %c, starting head position: %u, starting movement direction: %c\n\n", algorithm, head_position, movement_direction);
 
     Request *requests;
     size_t initial_size;
@@ -91,11 +86,11 @@ int main(int argc, char **argv) {
     // Get the requests from stdin
     getRequests(&requests, &initial_size);
 
-    for (i = 0; i < request_count; i++) {
-        printf("%d - sector: %d - arrival - %d - arrived %d - done %d\n", i, requests[i].sector, requests[i].arrival, requests[i].arrived, requests[i].done);
-    }
-
-    printf("Request count: %d\n", request_count);
+    // TODO: remove this
+    // for (i = 0; i < request_count; i++) {
+    //     printf("%d - sector: %d - arrival - %d - arrived %d - done %d\n", i, requests[i].sector, requests[i].arrival, requests[i].arrived, requests[i].done);
+    // }
+    // printf("Request count: %d\n\n", request_count);
 
     first_request_arrival = requests[0].arrival;
 
@@ -118,11 +113,7 @@ int main(int argc, char **argv) {
 }
 
 void firstInFirstOut(Request *requests) {
-    int request_to_service = 0;
-    bool reverse_direction = false;
-    bool done = false;
-
-    int current_sector = 0;
+    unsigned int current_sector = 0;
     int current_distance = 0;
     int current_time_required = 0;
 
@@ -134,6 +125,7 @@ void firstInFirstOut(Request *requests) {
             if (head_position == current_sector) {
                 // No movement required
                 current_distance = 0;
+                reverse_direction = false;
             } else if (head_position > current_sector) {
                 // Must move down
                 if (movement_direction == 'd') {
@@ -157,6 +149,7 @@ void firstInFirstOut(Request *requests) {
                 }
                 current_distance = current_sector - head_position;
             }
+
             // Calculate time required and set new head position
             current_time_required = timeRequiredForRequest(current_distance, reverse_direction);
             head_position = current_sector;
@@ -171,8 +164,8 @@ void firstInFirstOut(Request *requests) {
             current_time++;
         }
 
-        printf("--- time %d - total head movement %d - current time required %d ---\n", current_time, total_head_movement, current_time_required);
-
+        // TODO: remove this
+        printf("--- time %d - total head movement %d - current time required %d - current distance required %d ---\n", current_time, total_head_movement, current_time_required, current_distance);
         for (i = 0; i < request_count; i++) {
             printf("%d - sector: %d - arrival - %d - arrived %d - done %d\n", i, requests[i].sector, requests[i].arrival, requests[i].arrived, requests[i].done);
         }
@@ -186,15 +179,11 @@ void firstInFirstOut(Request *requests) {
 }
 
 void shortestSeekTimeFirst(Request *requests) {
-    int request_to_service = 0;
-    bool reverse_direction = false;
-    bool done = false;
-
     int shortest_seek = 0;
     int shortest_seek_index = 0;
     int current_seek = 0;
 
-    int current_sector = 0;
+    unsigned int current_sector = 0;
     int current_distance = 0;
     int current_time_required = 0;
 
@@ -222,6 +211,7 @@ void shortestSeekTimeFirst(Request *requests) {
             if (head_position == current_sector) {
                 // No movement required
                 current_distance = 0;
+                reverse_direction = false;
             } else if (head_position > current_sector) {
                 // Must move down
                 if (movement_direction == 'd') {
@@ -274,16 +264,13 @@ void shortestSeekTimeFirst(Request *requests) {
 }
 
 void cScan(Request *requests) {
-    int request_to_service = 0;
-    bool reverse_direction = false;
-    bool done = false;
     bool done_next_request = false;
 
     int closest_request = 0;
     int closest_request_index = 0;
     int current_request_distance = 0;
 
-    int current_sector = 0;
+    unsigned int current_sector = 0;
     int current_distance = 0;
     int current_time_required = 0;
 
@@ -374,8 +361,8 @@ void cScan(Request *requests) {
             current_time++;
         }
 
+        // TODO: remove this
         printf("--- time %d - total head movement %d - current time required %d ---\n", current_time, total_head_movement, current_time_required);
-
         for (i = 0; i < request_count; i++) {
             printf("%d - sector: %d - arrival - %d - arrived %d - done %d\n", i, requests[i].sector, requests[i].arrival, requests[i].arrived, requests[i].done);
         }
@@ -389,16 +376,13 @@ void cScan(Request *requests) {
 }
 
 void look(Request *requests) {
-int request_to_service = 0;
-    bool reverse_direction = false;
-    bool done = false;
     bool done_next_request = false;
 
     int closest_request = 0;
     int closest_request_index = 0;
     int current_request_distance = 0;
 
-    int current_sector = 0;
+    unsigned int current_sector = 0;
     int current_distance = 0;
     int current_time_required = 0;
 
@@ -485,8 +469,8 @@ int request_to_service = 0;
             current_time++;
         }
 
+        // TODO: remove this
         printf("--- time %d - total head movement %d - current time required %d ---\n", current_time, total_head_movement, current_time_required);
-
         for (i = 0; i < request_count; i++) {
             printf("%d - sector: %d - arrival - %d - arrived %d - done %d\n", i, requests[i].sector, requests[i].arrival, requests[i].arrived, requests[i].done);
         }
@@ -512,19 +496,19 @@ int timeRequiredForRequest(int distance, bool reverse_direction) {
     return distance / 10 + ((reverse_direction) ? 5 : 0);
 }
 
-// Function to initialize the processes array (initial size expanded as needed)
+// Function to initialize the requests array (initial size expanded as needed)
 void initRequests(Request **requests, size_t *size) {
     *size = 500;
     *requests = (Request*)malloc((*size)*sizeof(Request));
 }
 
-// Function to reallocate space for the processes (VARIABLE SIZE)
+// Function to reallocate space for the requests (VARIABLE SIZE)
 void reallocateRequests(Request **requests, size_t *size) {
     *size *= 2;
     *requests = (Request*)realloc(*requests, (*size) * sizeof(Request));
 }
 
-// Function used to read in the processes from the input
+// Function to read in the requests from std input
 int getRequests(Request **requests, size_t *requests_size) {
     int line_len = 1000;
     char line[1000] = {0};
@@ -532,7 +516,7 @@ int getRequests(Request **requests, size_t *requests_size) {
     while (fgets(line, line_len, stdin) != NULL) {
         int token_num = 0;
 
-        // Reallocate more space for processes if needed (VARIABLE SIZE)
+        // Reallocate more space for requests if needed (VARIABLE SIZE)
         if (request_count == *requests_size) {
             reallocateRequests(requests, requests_size);
         }

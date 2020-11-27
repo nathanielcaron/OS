@@ -1,0 +1,102 @@
+algorithm: c, starting head position: 53, starting movement direction: a
+0 - sector: 98 - arrival - 0 - arrived 0 - done 0
+1 - sector: 183 - arrival - 0 - arrived 0 - done 0
+2 - sector: 37 - arrival - 0 - arrived 0 - done 0
+3 - sector: 122 - arrival - 0 - arrived 0 - done 0
+4 - sector: 14 - arrival - 0 - arrived 0 - done 0
+5 - sector: 124 - arrival - 0 - arrived 0 - done 0
+6 - sector: 65 - arrival - 0 - arrived 0 - done 0
+7 - sector: 67 - arrival - 0 - arrived 0 - done 0
+Request count: 8
+Must find next request
+*** Closest request: 12 - request 65 ***
+Current distance: 12--- time 1 - total head movement 12 - current time required 1 ---
+0 - sector: 98 - arrival - 0 - arrived 1 - done 0
+1 - sector: 183 - arrival - 0 - arrived 1 - done 0
+2 - sector: 37 - arrival - 0 - arrived 1 - done 0
+3 - sector: 122 - arrival - 0 - arrived 1 - done 0
+4 - sector: 14 - arrival - 0 - arrived 1 - done 0
+5 - sector: 124 - arrival - 0 - arrived 1 - done 0
+6 - sector: 65 - arrival - 0 - arrived 1 - done 1
+7 - sector: 67 - arrival - 0 - arrived 1 - done 0
+Must find next request
+*** Closest request: 2 - request 67 ***
+Current distance: 2--- time 1 - total head movement 14 - current time required 0 ---
+0 - sector: 98 - arrival - 0 - arrived 1 - done 0
+1 - sector: 183 - arrival - 0 - arrived 1 - done 0
+2 - sector: 37 - arrival - 0 - arrived 1 - done 0
+3 - sector: 122 - arrival - 0 - arrived 1 - done 0
+4 - sector: 14 - arrival - 0 - arrived 1 - done 0
+5 - sector: 124 - arrival - 0 - arrived 1 - done 0
+6 - sector: 65 - arrival - 0 - arrived 1 - done 1
+7 - sector: 67 - arrival - 0 - arrived 1 - done 1
+Must find next request
+*** Closest request: 31 - request 98 ***
+Current distance: 31--- time 4 - total head movement 45 - current time required 3 ---
+0 - sector: 98 - arrival - 0 - arrived 1 - done 1
+1 - sector: 183 - arrival - 0 - arrived 1 - done 0
+2 - sector: 37 - arrival - 0 - arrived 1 - done 0
+3 - sector: 122 - arrival - 0 - arrived 1 - done 0
+4 - sector: 14 - arrival - 0 - arrived 1 - done 0
+5 - sector: 124 - arrival - 0 - arrived 1 - done 0
+6 - sector: 65 - arrival - 0 - arrived 1 - done 1
+7 - sector: 67 - arrival - 0 - arrived 1 - done 1
+Must find next request
+*** Closest request: 24 - request 122 ***
+Current distance: 24--- time 6 - total head movement 69 - current time required 2 ---
+0 - sector: 98 - arrival - 0 - arrived 1 - done 1
+1 - sector: 183 - arrival - 0 - arrived 1 - done 0
+2 - sector: 37 - arrival - 0 - arrived 1 - done 0
+3 - sector: 122 - arrival - 0 - arrived 1 - done 1
+4 - sector: 14 - arrival - 0 - arrived 1 - done 0
+5 - sector: 124 - arrival - 0 - arrived 1 - done 0
+6 - sector: 65 - arrival - 0 - arrived 1 - done 1
+7 - sector: 67 - arrival - 0 - arrived 1 - done 1
+Must find next request
+*** Closest request: 2 - request 124 ***
+Current distance: 2--- time 6 - total head movement 71 - current time required 0 ---
+0 - sector: 98 - arrival - 0 - arrived 1 - done 1
+1 - sector: 183 - arrival - 0 - arrived 1 - done 0
+2 - sector: 37 - arrival - 0 - arrived 1 - done 0
+3 - sector: 122 - arrival - 0 - arrived 1 - done 1
+4 - sector: 14 - arrival - 0 - arrived 1 - done 0
+5 - sector: 124 - arrival - 0 - arrived 1 - done 1
+6 - sector: 65 - arrival - 0 - arrived 1 - done 1
+7 - sector: 67 - arrival - 0 - arrived 1 - done 1
+Must find next request
+*** Closest request: 59 - request 183 ***
+Current distance: 59--- time 11 - total head movement 130 - current time required 5 ---
+0 - sector: 98 - arrival - 0 - arrived 1 - done 1
+1 - sector: 183 - arrival - 0 - arrived 1 - done 1
+2 - sector: 37 - arrival - 0 - arrived 1 - done 0
+3 - sector: 122 - arrival - 0 - arrived 1 - done 1
+4 - sector: 14 - arrival - 0 - arrived 1 - done 0
+5 - sector: 124 - arrival - 0 - arrived 1 - done 1
+6 - sector: 65 - arrival - 0 - arrived 1 - done 1
+7 - sector: 67 - arrival - 0 - arrived 1 - done 1
+Must find next request
+Must find next request
+*** Closest request: 14 - request 14 ***
+Current distance: 9831--- time 994 - total head movement 9961 - current time required 983 ---
+0 - sector: 98 - arrival - 0 - arrived 1 - done 1
+1 - sector: 183 - arrival - 0 - arrived 1 - done 1
+2 - sector: 37 - arrival - 0 - arrived 1 - done 0
+3 - sector: 122 - arrival - 0 - arrived 1 - done 1
+4 - sector: 14 - arrival - 0 - arrived 1 - done 1
+5 - sector: 124 - arrival - 0 - arrived 1 - done 1
+6 - sector: 65 - arrival - 0 - arrived 1 - done 1
+7 - sector: 67 - arrival - 0 - arrived 1 - done 1
+Must find next request
+*** Closest request: 23 - request 37 ***
+Current distance: 23--- time 996 - total head movement 9984 - current time required 2 ---
+0 - sector: 98 - arrival - 0 - arrived 1 - done 1
+1 - sector: 183 - arrival - 0 - arrived 1 - done 1
+2 - sector: 37 - arrival - 0 - arrived 1 - done 1
+3 - sector: 122 - arrival - 0 - arrived 1 - done 1
+4 - sector: 14 - arrival - 0 - arrived 1 - done 1
+5 - sector: 124 - arrival - 0 - arrived 1 - done 1
+6 - sector: 65 - arrival - 0 - arrived 1 - done 1
+7 - sector: 67 - arrival - 0 - arrived 1 - done 1
+
+Total Head Movement: 9984
+Total Service Time: 996
