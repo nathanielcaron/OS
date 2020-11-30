@@ -19,12 +19,12 @@ typedef struct Request {
 } Request;
 
 // Function templates
+void checkForArrivedRequests(Request *requests);
+int timeRequiredForRequest(int distance, bool reverse_direction);
 void firstInFirstOut(Request *requests);
 void shortestSeekTimeFirst(Request *requests);
 void cScan(Request *requests);
 void look(Request *requests);
-void checkForArrivedRequests(Request *requests);
-int timeRequiredForRequest(int distance, bool reverse_direction);
 void initRequests(Request **requests, size_t *size);
 void reallocateRequests(Request **requests, size_t *size);
 int getRequests(Request **requests, size_t *requests_size);
@@ -112,6 +112,22 @@ int main(int argc, char **argv) {
     return EXIT_SUCCESS;
 }
 
+void checkForArrivedRequests(Request *requests) {
+    for (i = arrived_requests_index; i < request_count; i++) {
+        if (requests[i].arrival <= current_time) {
+            requests[i].arrived = true;
+            arrived_requests_index++;
+        }
+    }
+}
+
+// Function to calculate the time required to process a request
+int timeRequiredForRequest(int distance, bool reverse_direction) {
+    // Uses the function from the aasignment description:
+    // time = distance/10 + (reverse_direction) ? 5 : 0
+    return distance / 10 + ((reverse_direction) ? 5 : 0);
+}
+
 void firstInFirstOut(Request *requests) {
     unsigned int current_sector = 0;
     int current_distance = 0;
@@ -179,9 +195,10 @@ void firstInFirstOut(Request *requests) {
 }
 
 void shortestSeekTimeFirst(Request *requests) {
-    int shortest_seek = 0;
+    int shortest_seek_time = 0;
     int shortest_seek_index = 0;
     int current_seek = 0;
+    int current_seek_time = 0;
 
     unsigned int current_sector = 0;
     int current_distance = 0;
@@ -191,18 +208,43 @@ void shortestSeekTimeFirst(Request *requests) {
         checkForArrivedRequests(requests);
 
         // Determine the request to service
-        shortest_seek = 10000;
+        shortest_seek_time = 10000;
         for (i = 0; i < arrived_requests_index; i++) {
             if (requests[i].arrived && !requests[i].done) {
                 current_seek = abs(requests[i].sector - head_position);
-                if (current_seek < shortest_seek) {
-                    shortest_seek = current_seek;
+                // Calculate seek time
+                if (current_seek == 0) {
+                    // No movement required
+                    reverse_direction = false;
+                } else if (head_position > requests[i].sector) {
+                    // Must move down
+                    if (movement_direction == 'd') {
+                        // No need to switch direction
+                        reverse_direction = false;
+                    } else if (movement_direction == 'a') {
+                        // Must switch direction
+                        reverse_direction = true;
+                    }
+                } else if (head_position < requests[i].sector) {
+                    // Must move up
+                    if (movement_direction == 'a') {
+                        // No need to switch direction
+                        reverse_direction = false;
+                    } else if (movement_direction == 'd') {
+                        // Must switch direction
+                        reverse_direction = true;
+                    }
+                }
+                current_seek_time = timeRequiredForRequest(current_seek, reverse_direction);
+                // Check if current seek time is less than shortest seek time
+                if (current_seek_time < shortest_seek_time) {
+                    shortest_seek_time = current_seek_time;
                     shortest_seek_index = i;
                 }
             }
         }
 
-        printf("*** Shortest seek: %d - request %d ***\n", shortest_seek, requests[shortest_seek_index].sector);
+        printf("*** Shortest seek: %d - request %d ***\n", shortest_seek_time, requests[shortest_seek_index].sector);
 
         request_to_service = shortest_seek_index;
 
@@ -391,7 +433,7 @@ void look(Request *requests) {
 
         reverse_direction = false;
 
-        if (arrived_requests_index > 0) {
+        if (arrived_requests_index > requests_done) {
             done_next_request = false;
             while (!done_next_request) {
                 printf("Must find next request\n");
@@ -481,19 +523,6 @@ void look(Request *requests) {
             total_service_time = current_time - first_request_arrival;
         }
     }
-}
-
-void checkForArrivedRequests(Request *requests) {
-    for (i = arrived_requests_index; i < request_count; i++) {
-        if (requests[i].arrival <= current_time) {
-            requests[i].arrived = true;
-            arrived_requests_index++;
-        }
-    }
-}
-
-int timeRequiredForRequest(int distance, bool reverse_direction) {
-    return distance / 10 + ((reverse_direction) ? 5 : 0);
 }
 
 // Function to initialize the requests array (initial size expanded as needed)
