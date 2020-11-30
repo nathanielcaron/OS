@@ -321,7 +321,7 @@ void cScan(Request *requests) {
 
         current_distance = 0;
 
-        if (arrived_requests_index > 0) {
+        if (arrived_requests_index > requests_done) {
             done_next_request = false;
             while (!done_next_request) {
                 printf("Must find next request\n");
