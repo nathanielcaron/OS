@@ -4,7 +4,7 @@
 #include <stdbool.h>
 
 /**
- * Assignment 9 - Disk Scheduling Algorithms FCFS, SSTF, C-SCAN, LOOK
+ * Assignment 9 - Disk Scheduling Algorithms FCFS, SSTF, C-SCAN, and LOOK
  * CS 3413
  * Nathaniel Caron
  * 3598979
@@ -76,22 +76,12 @@ int main(int argc, char **argv) {
         }
     }
 
-    // TODO: remove this
-    // printf("algorithm: %c, starting head position: %u, starting movement direction: %c\n\n", algorithm, head_position, movement_direction);
-
     Request *requests;
     size_t initial_size;
     initRequests(&requests, &initial_size);
 
     // Get the requests from stdin
     getRequests(&requests, &initial_size);
-
-    // TODO: remove this
-    // for (i = 0; i < request_count; i++) {
-    //     printf("%d - sector: %d - arrival - %d - arrived %d - done %d\n", i, requests[i].sector, requests[i].arrival, requests[i].arrived, requests[i].done);
-    // }
-    // printf("Request count: %d\n\n", request_count);
-
     first_request_arrival = requests[0].arrival;
 
     // Service requests with selected algorithm
@@ -107,7 +97,7 @@ int main(int argc, char **argv) {
 
     // Print Final Report
     printf("\nTotal Head Movement: %d\n", total_head_movement);
-    printf("Total Service Time: %d\n", total_service_time);
+    printf("Total Service Time: %d\n\n", total_service_time);
 
     return EXIT_SUCCESS;
 }
@@ -123,7 +113,7 @@ void checkForArrivedRequests(Request *requests) {
 
 // Function to calculate the time required to process a request
 int timeRequiredForRequest(int distance, bool reverse_direction) {
-    // Uses the function from the aasignment description:
+    // Uses the function from the assignment description:
     // time = distance/10 + (reverse_direction) ? 5 : 0
     return distance / 10 + ((reverse_direction) ? 5 : 0);
 }
@@ -169,6 +159,7 @@ void firstInFirstOut(Request *requests) {
             // Calculate time required and set new head position
             current_time_required = timeRequiredForRequest(current_distance, reverse_direction);
             head_position = current_sector;
+            printf("%u\n", current_sector);
             // Mark request as done
             requests[request_to_service].done = true;
             requests_done++;
@@ -178,12 +169,6 @@ void firstInFirstOut(Request *requests) {
             request_to_service++;
         } else {
             current_time++;
-        }
-
-        // TODO: remove this
-        printf("--- time %d - total head movement %d - current time required %d - current distance required %d ---\n", current_time, total_head_movement, current_time_required, current_distance);
-        for (i = 0; i < request_count; i++) {
-            printf("%d - sector: %d - arrival - %d - arrived %d - done %d\n", i, requests[i].sector, requests[i].arrival, requests[i].arrived, requests[i].done);
         }
 
         // Check if all requests have been serviced
@@ -244,8 +229,6 @@ void shortestSeekTimeFirst(Request *requests) {
             }
         }
 
-        printf("*** Shortest seek: %d - request %d ***\n", shortest_seek_time, requests[shortest_seek_index].sector);
-
         request_to_service = shortest_seek_index;
 
         if (requests[request_to_service].arrived && !requests[request_to_service].done) {
@@ -280,6 +263,7 @@ void shortestSeekTimeFirst(Request *requests) {
             // Calculate time required and set new head position
             current_time_required = timeRequiredForRequest(current_distance, reverse_direction);
             head_position = current_sector;
+            printf("%u\n", current_sector);
             // Mark request as done
             requests[request_to_service].done = true;
             requests_done++;
@@ -289,12 +273,6 @@ void shortestSeekTimeFirst(Request *requests) {
             request_to_service++;
         } else {
             current_time++;
-        }
-
-        printf("--- time %d - total head movement %d - current time required %d ---\n", current_time, total_head_movement, current_time_required);
-
-        for (i = 0; i < request_count; i++) {
-            printf("%d - sector: %d - arrival - %d - arrived %d - done %d\n", i, requests[i].sector, requests[i].arrival, requests[i].arrived, requests[i].done);
         }
 
         // Check if all requests have been serviced
@@ -324,7 +302,6 @@ void cScan(Request *requests) {
         if (arrived_requests_index > requests_done) {
             done_next_request = false;
             while (!done_next_request) {
-                printf("Must find next request\n");
                 // Determine the request to service
                 if (movement_direction == 'a') {
                     closest_request = 10000;
@@ -368,8 +345,6 @@ void cScan(Request *requests) {
                     }
                 }
             }
-
-            printf("*** Closest request: %d - request %d ***\n", closest_request, requests[closest_request_index].sector);
         }
 
         request_to_service = closest_request_index;
@@ -387,11 +362,10 @@ void cScan(Request *requests) {
                 current_distance += current_sector - head_position;
             }
 
-            printf("Current distance: %d", current_distance);
-
             // Calculate time required and set new head position
             current_time_required = timeRequiredForRequest(current_distance, reverse_direction);
             head_position = current_sector;
+            printf("%u\n", current_sector);
             // Mark request as done
             requests[request_to_service].done = true;
             requests_done++;
@@ -401,12 +375,6 @@ void cScan(Request *requests) {
             request_to_service++;
         } else {
             current_time++;
-        }
-
-        // TODO: remove this
-        printf("--- time %d - total head movement %d - current time required %d ---\n", current_time, total_head_movement, current_time_required);
-        for (i = 0; i < request_count; i++) {
-            printf("%d - sector: %d - arrival - %d - arrived %d - done %d\n", i, requests[i].sector, requests[i].arrival, requests[i].arrived, requests[i].done);
         }
 
         // Check if all requests have been serviced
@@ -436,7 +404,6 @@ void look(Request *requests) {
         if (arrived_requests_index > requests_done) {
             done_next_request = false;
             while (!done_next_request) {
-                printf("Must find next request\n");
                 // Determine the request to service
                 if (movement_direction == 'a') {
                     closest_request = 10000;
@@ -478,8 +445,6 @@ void look(Request *requests) {
                     }
                 }
             }
-
-            printf("*** Closest request: %d - request %d ***\n", closest_request, requests[closest_request_index].sector);
         }
 
         request_to_service = closest_request_index;
@@ -500,6 +465,7 @@ void look(Request *requests) {
             // Calculate time required and set new head position
             current_time_required = timeRequiredForRequest(current_distance, reverse_direction);
             head_position = current_sector;
+            printf("%u\n", current_sector);
             // Mark request as done
             requests[request_to_service].done = true;
             requests_done++;
@@ -509,12 +475,6 @@ void look(Request *requests) {
             request_to_service++;
         } else {
             current_time++;
-        }
-
-        // TODO: remove this
-        printf("--- time %d - total head movement %d - current time required %d ---\n", current_time, total_head_movement, current_time_required);
-        for (i = 0; i < request_count; i++) {
-            printf("%d - sector: %d - arrival - %d - arrived %d - done %d\n", i, requests[i].sector, requests[i].arrival, requests[i].arrived, requests[i].done);
         }
 
         // Check if all requests have been serviced
