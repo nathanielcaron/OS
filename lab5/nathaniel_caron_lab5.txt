@@ -57,4 +57,21 @@ Q5. Link files
     vii)Delete f2.txt. What happened to f2link.txt?
 
 Answer:
-    i) cp creates a new file with the same contents as the original. ln only creates links between files.
+    i)   cp creates a new file with the same contents as the original. ln only creates links between files (new pointer that points to the same data).
+    ii)  ln nathaniel_caron_lab5.txt linkName.txt
+         ls -i
+         5243362 linkName.txt  5243362 nathaniel_caron_lab5.txt
+         Both files have the same i-node number. This is because they both point to the same data.
+         The link create is a hard link.
+    
+    iii) When we modify the contents of one file (f2.txt), the contents of the other (f2link.txt) is also modified. This is because they both point to the same data.
+
+    iV)  When we delete the original file (f2.txt), the link (f2link.txt) still points to the data on the disk. (Now there is only one pointer to the data, not two)
+
+    v)  ln linkcopy.txt copycopy.txt -s
+        5245607 copycopy.txt  5243269 linkcopy.txt
+        The i-node numbers are different. This created a symbolic link instead of a hard link.
+    
+    vi) When we modify the content of the original (f2.txt), the contents of the link (f2link.txt) are also modified.
+
+    vii) After we delete the original (f2.txt), the link (f2link.txt) does not have any data to point to so it cannot be opened. (The data was removed from the disk)

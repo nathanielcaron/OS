@@ -1,0 +1,77 @@
+CS 3413
+Lab 5
+
+Nathaniel Caron
+3598979
+
+Q2. Traversing a directory structure
+    Create a subdirectory lab5. Use the ls command to recursively list the contents of your current directory and parent directory (including all the subdirectories). 
+
+Answer:
+ls -R or ls --recursive
+
+Q3. Show the i-node number
+    i) Show the i-node numbers for files in your directory.
+    ii) Compare your results for this question with those of your classmates and answer the following question:
+        Did you get the same i-node numbers as your classmates, and why?
+    iii) Show your directory lab5’s metadata using the stat command. Explain the difference between this output and the output you obtained in 3.i.
+
+Answer:
+    i)  ls -i or ls --inode
+        In parent directory:
+            5114617 as1  5262337 as3  5243435 as5  5243034 as7  5243858 as9   5262305 lab2  5243066 lab4  5252485 README.md
+            5258591 as2  5264838 as4  5243377 as6  5243159 as8  5256960 lab1  5242994 lab3  5243508 lab5
+        In lab5 directory:
+            5243362 nathaniel_caron_lab5.txt
+
+    ii) No, the i-node numbers were different. I-node numbers are unique within file systems and they are combined with file system number.
+
+    iii) File: lab5
+         Size: 4096      	Blocks: 8          IO Block: 4096   directory
+         Device: 803h/2051d	Inode: 5243508     Links: 2
+         Access: (0775/drwxrwxr-x)  Uid: ( 1000/nathanielcaron)   Gid: ( 1000/nathanielcaron)
+         Access: 2020-11-30 22:52:07.424089772 -0400
+         Modify: 2020-11-30 22:53:23.377509603 -0400
+         Change: 2020-11-30 22:53:23.377509603 -0400
+         Birth: -
+
+         There is alot more information listed here compared to 3.i. The i-node number is also shown along with the rest of the file's metadata.
+         (Name, Size, Blocks, Device, Access time, Last modifed time, Creation, etc.)
+
+Q4. Copy a file
+    i) Create a copy of some file in your directory. Show the i-node numbers for the original and copied files. Compare and comment.
+
+Answer:
+
+    i) cp nathaniel_caron_lab5.txt copy.txt
+       5243269 copy.txt  5243362 nathaniel_caron_lab5.txt
+       The two inode numbers are different. This is because they are different files and each i-node number is unique within a file system.
+
+Q5. Link files
+    i) Examine the command ln. What is the difference between the cp and ln commands?
+    ii) Create a file f2.txt. Create a link from this file to f2link.txt. Examine the inodes for both files, comment. What kind of link have you created?
+    iii) Modify content of f2.txt. Comment on the changes of f2link.txt.
+    iv) Delete f2.txt. What happened to f2link.txt?
+    v) Create a link to f2link.txt using the –s option. Examine the i-nodes for both files and comment. What kind of link have you created?
+    vi) Modify the content of f2.txt. Comment on the changes of f2link.txt.
+    vii)Delete f2.txt. What happened to f2link.txt?
+
+Answer:
+    i)   cp creates a new file with the same contents as the original. ln only creates links between files (new pointer that points to the same data).
+    ii)  ln nathaniel_caron_lab5.txt linkName.txt
+         ls -i
+         5243362 linkName.txt  5243362 nathaniel_caron_lab5.txt
+         Both files have the same i-node number. This is because they both point to the same data.
+         The link create is a hard link.
+    
+    iii) When we modify the contents of one file (f2.txt), the contents of the other (f2link.txt) is also modified. This is because they both point to the same data.
+
+    iV)  When we delete the original file (f2.txt), the link (f2link.txt) still points to the data on the disk. (Now there is only one pointer to the data, not two)
+
+    v)  ln linkcopy.txt copycopy.txt -s
+        5245607 copycopy.txt  5243269 linkcopy.txt
+        The i-node numbers are different. This created a symbolic link instead of a hard link.
+    
+    vi) When we modify the content of the original (f2.txt), the contents of the link (f2link.txt) are also modified.
+
+    vii) After we delete the original (f2.txt), the link (f2link.txt) does not have any data to point to so it cannot be opened. (The data was removed from the disk)
