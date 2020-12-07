@@ -25,7 +25,7 @@ void reallocateFiles(int **files, int *size);
 int block_count = 0;
 int free_block_count = 0;
 int total_file_count = 0;
-int blocks_to_move = 0;
+int blocks_moved = 0;
 
 int main(int argc, char **argv) {
     int i = 0;
@@ -34,26 +34,19 @@ int main(int argc, char **argv) {
     Block blocks[100000];
     getBlocks(blocks);
 
-    // TODO: remove this
-    // printf("Blocks before defragmentation: \n");
-    // for (i = 0; i < block_count; i++) {
-        // printf("%d - %d - %d\n", i, blocks[i].next, blocks[i].file_start);
-    // }
-    // printf("\n");
-
     int file_count = 0;
     int files_size = 100;
     int *files = (int*)calloc(files_size, sizeof(int));
 
-    // Dtermine file starts and file sizes to organize blocks
+    // Determine file starts and file sizes to organize blocks
     for (i = 0; i < block_count; i++) {
         if (blocks[i].next != -2 && !blocks[i].checked) {
-            // Block is not empty
+            // Block is not empty and has not been checked
 
-            // Check if file start
+            // Check if block is a file start (i.e. head of list)
             for (j = 0; j < block_count; j++) {
                 if (blocks[j].next == i) {
-                    // Not a file start
+                    // Not a file start, other block references current block
                     break;
                 } else if (j == block_count-1) {
                     // file start
@@ -63,8 +56,8 @@ int main(int argc, char **argv) {
 
             // Calculate how many blocks file is
             if (blocks[i].file_start == true) {
-                // Reallocate more space for files if needed (VARIABLE SIZE)
                 if (file_count == files_size) {
+                    // Reallocate more space for files if needed (VARIABLE SIZE)
                     reallocateFiles(&files, &files_size);
                 }
 
@@ -72,9 +65,7 @@ int main(int argc, char **argv) {
                 int previous = 0;
                 bool done = false;
                 files[file_count] = 0;
-                // printf("*%d* ", file_count);
                 while (!done) {
-                    // printf("%d ((%d))-> ", current, files[file_count]);
                     if (blocks[current].next == -1) {
                         // End of file
                         files[file_count]++;
@@ -88,22 +79,9 @@ int main(int argc, char **argv) {
                     }
                 }
                 file_count++;
-                // printf("\n");
             }
         }
     }
-
-    // printf("Blocks before defragmentation w/ file starts: \n");
-    // for (i = 0; i < block_count; i++) {
-        // printf("%d - %d - %d\n", i, blocks[i].next, blocks[i].file_start);
-    // }
-    // printf("\n");
-
-    // printf("Files: \n");
-    // for (i = 0; i < file_count; i++) {
-        // printf("%d - %d\n", i, files[i]);
-    // }
-    // printf("\n");
 
     // Assign new values to blocks
     int block_position = 0;
@@ -120,7 +98,8 @@ int main(int argc, char **argv) {
             }
             if (blocks[block_position].next != new_value) {
                 if (blocks[block_position].next != -2) {
-                        blocks_to_move++;
+                    // block contained other value, must move it
+                    blocks_moved++;
                 }
                 blocks[block_position].next = new_value;
             }
@@ -133,25 +112,19 @@ int main(int argc, char **argv) {
     int assigned_free_block_count = 0;
     for (i = block_position; i < block_count; i++) {
         if (blocks[i].next != -2) {
+            // block contained other value, must move it
             blocks[i].next = -2;
-            blocks_to_move++;
+            blocks_moved++;
         }
         assigned_free_block_count++;
     }
 
     // Print new disk layout and number of blocks moved
-    printf("Blocks after defragmentation: \n");
+    printf("New disk layout: \n");
     for (i = 0; i < block_count; i++) {
-        printf("%d - %d \n", i, blocks[i].next);
+        printf("%d %d\n", i, blocks[i].next);
     }
-    printf("blocks to move %d\n", blocks_to_move);
-
-    // TODO: remove this
-    printf("\nfree block count %d\n", free_block_count);
-    printf("assigned free block count %d\n", assigned_free_block_count);
-    printf("\ntotal file count %d\n", total_file_count);
-    printf("file count %d\n", file_count);
-    printf("Total blocks %d\n", block_count);
+    printf("\nNumber of blocks moved: %d\n\n", blocks_moved);
 
     return EXIT_SUCCESS;
 }
